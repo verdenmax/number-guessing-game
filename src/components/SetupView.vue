@@ -4,7 +4,7 @@ import type { PlayerId, ValidationResult } from '../game/types'
 import SecretInput from './SecretInput.vue'
 import HandoffScreen from './HandoffScreen.vue'
 
-const props = defineProps<{
+defineProps<{
   digits: number
   validate: (value: string) => ValidationResult
 }>()
