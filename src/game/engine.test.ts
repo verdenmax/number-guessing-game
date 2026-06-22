@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { feedback, createGame, setSecret } from './engine'
+import { feedback, createGame, setSecret, submitGuess } from './engine'
 
 describe('feedback', () => {
   it('全部位置正确返回位数', () => {
@@ -94,5 +94,89 @@ describe('setSecret', () => {
     const s0 = createGame()
     setSecret(s0, 'p1', '1234')
     expect(s0.secrets.p1).toBeNull()
+  })
+})
+
+function startPlaying() {
+  let s = createGame()
+  s = setSecret(s, 'p1', '1234')
+  s = setSecret(s, 'p2', '5678')
+  return s
+}
+
+describe('submitGuess', () => {
+  it('P1 猜后轮到 P2，本回合未结算', () => {
+    const s = submitGuess(startPlaying(), '0000') // 猜 P2 的 5678，未中
+    expect(s.current).toBe('p2')
+    expect(s.phase).toBe('playing')
+    expect(s.history.p1).toHaveLength(1)
+    expect(s.history.p1[0]).toEqual({ guess: '0000', feedback: 0 })
+    expect(s.pendingHits.p1).toBe(false)
+  })
+
+  it('记录正确的 feedback 值', () => {
+    const s = submitGuess(startPlaying(), '5000') // 对 5678：位置1的5✓ → 1
+    expect(s.history.p1[0].feedback).toBe(1)
+  })
+
+  it('一整回合都没中 → 进入下一回合、P1 先手、pendingHits 重置', () => {
+    let s = startPlaying()
+    s = submitGuess(s, '0000') // P1 猜 P2，未中
+    s = submitGuess(s, '0000') // P2 猜 P1，未中 → 回合末
+    expect(s.phase).toBe('playing')
+    expect(s.round).toBe(2)
+    expect(s.current).toBe('p1')
+    expect(s.pendingHits).toEqual({ p1: false, p2: false })
+  })
+
+  it('仅 P1 猜中 → P1 胜（回合末结算，P2 同回合也猜过）', () => {
+    let s = startPlaying()
+    s = submitGuess(s, '5678') // P1 猜中 P2 的数
+    expect(s.current).toBe('p2') // 不立即结束
+    expect(s.phase).toBe('playing')
+    s = submitGuess(s, '0000') // P2 猜 P1，未中 → 回合末结算
+    expect(s.phase).toBe('over')
+    expect(s.outcome).toEqual({ kind: 'win', winner: 'p1' })
+  })
+
+  it('仅 P2 猜中 → P2 胜', () => {
+    let s = startPlaying()
+    s = submitGuess(s, '0000') // P1 未中
+    s = submitGuess(s, '1234') // P2 猜中 P1 的数 → 回合末
+    expect(s.phase).toBe('over')
+    expect(s.outcome).toEqual({ kind: 'win', winner: 'p2' })
+  })
+
+  it('双方同回合都猜中 → 平局', () => {
+    let s = startPlaying()
+    s = submitGuess(s, '5678') // P1 中
+    s = submitGuess(s, '1234') // P2 也中 → 回合末
+    expect(s.phase).toBe('over')
+    expect(s.outcome).toEqual({ kind: 'draw' })
+  })
+
+  it('历史跨回合正确累积', () => {
+    let s = startPlaying()
+    s = submitGuess(s, '0000')
+    s = submitGuess(s, '0000')
+    s = submitGuess(s, '1000')
+    s = submitGuess(s, '2000')
+    expect(s.history.p1).toHaveLength(2)
+    expect(s.history.p2).toHaveLength(2)
+  })
+
+  it('非 playing 阶段调用抛错', () => {
+    expect(() => submitGuess(createGame(), '1234')).toThrow()
+  })
+
+  it('非法猜测抛错', () => {
+    expect(() => submitGuess(startPlaying(), '12')).toThrow()
+  })
+
+  it('不修改原状态（不可变）', () => {
+    const s0 = startPlaying()
+    submitGuess(s0, '5678')
+    expect(s0.history.p1).toHaveLength(0)
+    expect(s0.current).toBe('p1')
   })
 })

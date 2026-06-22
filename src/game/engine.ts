@@ -1,5 +1,5 @@
-import type { GameConfig, GameState, PlayerId } from './types'
-import { validateSecret } from './validate'
+import type { GameConfig, GameState, PlayerId, GuessRecord } from './types'
+import { validateSecret, validateGuess } from './validate'
 
 export function feedback(secret: string, guess: string): number {
   let bulls = 0
@@ -47,5 +47,50 @@ export function setSecret(state: GameState, player: PlayerId, value: string): Ga
     phase: bothSet ? 'playing' : 'setup',
     current: 'p1',
     round: 1,
+  }
+}
+
+function otherPlayer(p: PlayerId): PlayerId {
+  return p === 'p1' ? 'p2' : 'p1'
+}
+
+export function submitGuess(state: GameState, value: string): GameState {
+  if (state.phase !== 'playing') {
+    throw new Error('只能在 playing 阶段猜测')
+  }
+  const g = validateGuess(value, state.config)
+  if (!g.ok) {
+    throw new Error(`非法猜测：${g.error}`)
+  }
+  const player = state.current
+  const opponent = otherPlayer(player)
+  const secret = state.secrets[opponent] as string
+  const fb = feedback(secret, value)
+  const hit = fb === state.config.digits
+
+  const record: GuessRecord = { guess: value, feedback: fb }
+  const history = { ...state.history, [player]: [...state.history[player], record] }
+  const pendingHits = { ...state.pendingHits, [player]: hit }
+
+  if (player === 'p1') {
+    return { ...state, history, pendingHits, current: 'p2' }
+  }
+
+  const { p1: p1Hit, p2: p2Hit } = pendingHits
+  if (p1Hit && p2Hit) {
+    return { ...state, history, pendingHits, phase: 'over', outcome: { kind: 'draw' } }
+  }
+  if (p1Hit) {
+    return { ...state, history, pendingHits, phase: 'over', outcome: { kind: 'win', winner: 'p1' } }
+  }
+  if (p2Hit) {
+    return { ...state, history, pendingHits, phase: 'over', outcome: { kind: 'win', winner: 'p2' } }
+  }
+  return {
+    ...state,
+    history,
+    pendingHits: { p1: false, p2: false },
+    round: state.round + 1,
+    current: 'p1',
   }
 }
