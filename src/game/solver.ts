@@ -1,3 +1,6 @@
+import { feedback } from './engine'
+import type { GuessRecord } from './types'
+
 export function enumerateCandidates(digits: number): string[] {
   const results: string[] = []
   const used = new Array<boolean>(10).fill(false)
@@ -20,4 +23,8 @@ export function enumerateCandidates(digits: number): string[] {
 
   recurse()
   return results
+}
+
+export function filterByFacts(candidates: string[], guesses: GuessRecord[]): string[] {
+  return candidates.filter((c) => guesses.every((g) => feedback(c, g.guess) === g.feedback))
 }
