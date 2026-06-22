@@ -42,14 +42,21 @@ function useGame(initial: Partial<GameConfig> = {}): {
 
 ```typescript
 const {
-  phase, current, round, outcome, config, state,
+  phase, current, outcome, config, state,
   applySecret, applyGuess, checkSecret, checkGuess, reset,
 } = useGame()
 ```
 
 ```vue
+<!-- playing 阶段左右两侧推理助手（红/蓝） -->
+<SolverPanel v-if="phase === 'playing'" :digits="config.digits" :guesses="state.history.p1" side="red" />
+
 <SetupView  v-if="phase === 'setup'"        :digits="config.digits" :validate="checkSecret" @set-secret="applySecret" />
-<PlayView   v-else-if="phase === 'playing'" :digits="config.digits" :current="current" :round="round"
+<PlayView   v-else-if="phase === 'playing'" :digits="config.digits" :current="current"
                                             :validate="checkGuess" :history="state.history" @guess="applyGuess" />
 <ResultView v-else                          :outcome="outcome" :secrets="state.secrets" :history="state.history" @play-again="reset()" />
+
+<SolverPanel v-if="phase === 'playing'" :digits="config.digits" :guesses="state.history.p2" side="blue" />
 ```
+
+> `useGame` 仍导出 `round`（引擎内部回合计数），但 **playing 阶段已无交接屏，`PlayView` 不再接收 `round`**。
