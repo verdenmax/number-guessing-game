@@ -431,10 +431,16 @@ button:disabled {
 }
 
 .solver.side-red {
+  --accent: var(--red);
+  --accent-soft: var(--red-soft);
+  --accent-hover: var(--red-hover);
   border-top: 5px solid var(--red);
 }
 
 .solver.side-blue {
+  --accent: var(--blue);
+  --accent-soft: var(--blue-soft);
+  --accent-hover: var(--blue-hover);
   border-top: 5px solid var(--blue);
 }
 
@@ -517,6 +523,7 @@ button:disabled {
   background: #fee2e2;
   color: #b91c1c;
   border-color: #ef4444;
+  border-style: dashed;
 }
 
 .solver-reset {
@@ -524,6 +531,15 @@ button:disabled {
   color: var(--accent);
   font-size: 0.85rem;
   padding: 8px 12px;
+}
+
+.solver-toggle:hover {
+  background: var(--accent-soft);
+}
+
+.solver-reset:hover {
+  background: var(--accent);
+  color: #fff;
 }
 
 /* ---------- 展示优化 ---------- */
