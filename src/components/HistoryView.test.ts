@@ -45,6 +45,7 @@ describe('HistoryView', () => {
   it('error 时显示错误信息', () => {
     const w = mount(HistoryView, { props: { records: [], error: '历史读取失败' } })
     expect(w.text()).toContain('历史读取失败')
+    expect(w.find('.empty').exists()).toBe(false) // error 抑制空态，二者不同时出现
   })
 
   it('点击行 emit open(record)', async () => {

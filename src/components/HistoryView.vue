@@ -44,6 +44,7 @@ function confirmClear() {
       </div>
     </header>
 
+    <!-- 错误横幅与列表非互斥；空态仅在无记录且无错误时显示 -->
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-if="records.length === 0 && !error" class="empty">还没有历史记录，玩一局试试吧</p>
 
