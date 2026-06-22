@@ -15,7 +15,7 @@ interface GameRecord {
   digits: number
   names: { p1: string | null; p2: string | null }    // 可选昵称
   secrets: { p1: string; p2: string }                // 双方秘密数（结束后必非 null）
-  history: { p1: GuessRecord[]; p2: GuessRecord[] }   // 双方完整猜测记录（深拷贝）
+  history: { p1: GuessRecord[]; p2: GuessRecord[] }   // 双方完整猜测记录（逐条浅拷贝，脱离原 state）
   outcome: Outcome                                    // 'win'(winner) | 'draw' | 'ongoing'
   rounds: number
 }
@@ -46,7 +46,7 @@ buildGameRecord(
   names: { p1: string | null; p2: string | null },
   opts?: { id?: string; now?: number },
 ): GameRecord
-// 仅 over 阶段可调用，否则抛错；null 秘密守卫（防腐）；history 逐条深拷贝。
+// 仅 over 阶段可调用，否则抛错；null 秘密守卫（防腐）；history 逐条浅拷贝（GuessRecord 扁平，完全脱离原 state）。
 // opts.id / opts.now 可注入（便于测试 / 复现），缺省用 newId() / Date.now()。
 ```
 
