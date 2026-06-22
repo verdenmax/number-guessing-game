@@ -1,0 +1,353 @@
+:root {
+  --bg: #f4f5fb;
+  --bg-gradient: linear-gradient(160deg, #f4f5fb 0%, #eceefb 100%);
+  --card: #ffffff;
+  --text: #1f2330;
+  --text-muted: #6b7280;
+  --primary: #5b5bd6;
+  --primary-hover: #4848c4;
+  --primary-soft: #ececfb;
+  --danger: #dc2626;
+  --border: #e5e7eb;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 10px 30px rgba(20, 20, 50, 0.08);
+  --space: 8px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", "JetBrains Mono", "Fira Code", "Roboto Mono", ui-monospace,
+    Menlo, Consolas, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg-gradient);
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* ---------- App card ---------- */
+.app {
+  width: 100%;
+  max-width: 460px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app > h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+/* ---------- Text helpers ---------- */
+.label {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.error {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.82rem;
+  color: var(--danger);
+  text-align: center;
+}
+
+.turn {
+  margin: 0;
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Inputs ---------- */
+.secret-input,
+.guess-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+input {
+  flex: 1;
+  width: 100%;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--text);
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+  letter-spacing: normal;
+}
+
+input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(91, 91, 214, 0.15);
+}
+
+/* ---------- Buttons ---------- */
+button {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 18px;
+  background: var(--primary);
+  color: #fff;
+  transition: background-color 0.18s ease, transform 0.06s ease, box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+
+button:hover {
+  background: var(--primary-hover);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  background: #c7c9d6;
+  color: #f3f4f8;
+  cursor: not-allowed;
+}
+
+.confirm {
+  width: 100%;
+}
+
+/* Secondary button: 显示/隐藏 toggle */
+.toggle {
+  flex: 0 0 auto;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 0.9rem;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+}
+
+.toggle:hover {
+  background: #e0e0fa;
+}
+
+/* ---------- Handoff screen ---------- */
+.handoff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+  padding: 28px 20px;
+  background: var(--primary-soft);
+  border: 2px dashed rgba(91, 91, 214, 0.4);
+  border-radius: var(--radius);
+}
+
+.handoff .message {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.handoff button {
+  width: 100%;
+  max-width: 280px;
+  padding: 16px 18px;
+  font-size: 1.05rem;
+}
+
+/* ---------- Play view ---------- */
+.play {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- History ---------- */
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.history ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fafafe;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.history .guess {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--text);
+}
+
+.history .fb {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.history .empty {
+  margin: 0;
+  padding: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- Result view ---------- */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.result h2 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+}
+
+.result .reveal {
+  margin: 0;
+  padding: 14px 16px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  background: var(--primary-soft);
+  border-radius: var(--radius-sm);
+}
+
+.histories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.histories > .history {
+  flex: 1 1 180px;
+  min-width: 180px;
+}
+
+.result > button {
+  width: 100%;
+  padding: 15px 18px;
+  font-size: 1.05rem;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+  }
+
+  .app {
+    padding: 22px 18px;
+    border-radius: 12px;
+  }
+
+  .app > h1 {
+    font-size: 1.5rem;
+  }
+
+  .histories {
+    flex-direction: column;
+  }
+
+  .histories > .history {
+    min-width: 0;
+  }
+}
