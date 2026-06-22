@@ -3,6 +3,8 @@ import type { GuessRecord } from './types'
 
 const candidateCache = new Map<number, string[]>()
 
+// 注意：返回的是按 digits 缓存的共享数组，调用方必须视为只读、切勿就地修改
+// （否则会污染缓存，影响后续所有调用）。filterByFacts 用 .filter 返回新数组，安全。
 export function enumerateCandidates(digits: number): string[] {
   const cached = candidateCache.get(digits)
   if (cached) return cached
