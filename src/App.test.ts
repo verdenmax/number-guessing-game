@@ -4,6 +4,7 @@ import App from './App.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
+import SolverPanel from './components/SolverPanel.vue'
 
 describe('App 整合', () => {
   it('完整一局：双方设置 → 猜测 → 红方获胜', async () => {
@@ -38,5 +39,33 @@ describe('App 整合', () => {
     w.findComponent(ResultView).vm.$emit('playAgain')
     await w.vm.$nextTick()
     expect(w.findComponent(SetupView).exists()).toBe(true)
+  })
+
+  it('playing 阶段渲染左右两个 SolverPanel', async () => {
+    const w = mount(App)
+    w.findComponent(SetupView).vm.$emit('setSecret', 'p1', '1234')
+    w.findComponent(SetupView).vm.$emit('setSecret', 'p2', '5678')
+    await w.vm.$nextTick()
+    const panels = w.findAllComponents(SolverPanel)
+    expect(panels).toHaveLength(2)
+    expect(panels[0].props('side')).toBe('red')
+    expect(panels[1].props('side')).toBe('blue')
+  })
+
+  it('setup 阶段不渲染 SolverPanel', () => {
+    const w = mount(App)
+    expect(w.findAllComponents(SolverPanel)).toHaveLength(0)
+  })
+
+  it('结束阶段不渲染 SolverPanel', async () => {
+    const w = mount(App)
+    w.findComponent(SetupView).vm.$emit('setSecret', 'p1', '1234')
+    w.findComponent(SetupView).vm.$emit('setSecret', 'p2', '5678')
+    await w.vm.$nextTick()
+    w.findComponent(PlayView).vm.$emit('guess', '5678')
+    await w.vm.$nextTick()
+    w.findComponent(PlayView).vm.$emit('guess', '1234') // 双中 → 平局结束
+    await w.vm.$nextTick()
+    expect(w.findAllComponents(SolverPanel)).toHaveLength(0)
   })
 })

@@ -4,6 +4,7 @@ import { useGame } from './composables/useGame'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
+import SolverPanel from './components/SolverPanel.vue'
 
 const {
   phase, current, outcome, config, state,
@@ -19,32 +20,50 @@ const activeSide = computed(() => {
 
 <template>
   <div class="stage" :class="`side-${activeSide}`">
-    <main class="app">
-      <h1>Guessing Number</h1>
-
-      <SetupView
-        v-if="phase === 'setup'"
+    <div class="table">
+      <SolverPanel
+        v-if="phase === 'playing'"
+        class="solver-left"
         :digits="config.digits"
-        :validate="checkSecret"
-        @set-secret="applySecret"
+        :guesses="state.history.p1"
+        side="red"
       />
 
-      <PlayView
-        v-else-if="phase === 'playing'"
+      <main class="app">
+        <h1>Guessing Number</h1>
+
+        <SetupView
+          v-if="phase === 'setup'"
+          :digits="config.digits"
+          :validate="checkSecret"
+          @set-secret="applySecret"
+        />
+
+        <PlayView
+          v-else-if="phase === 'playing'"
+          :digits="config.digits"
+          :current="current"
+          :validate="checkGuess"
+          :history="state.history"
+          @guess="applyGuess"
+        />
+
+        <ResultView
+          v-else
+          :outcome="outcome"
+          :secrets="state.secrets"
+          :history="state.history"
+          @play-again="reset()"
+        />
+      </main>
+
+      <SolverPanel
+        v-if="phase === 'playing'"
+        class="solver-right"
         :digits="config.digits"
-        :current="current"
-        :validate="checkGuess"
-        :history="state.history"
-        @guess="applyGuess"
+        :guesses="state.history.p2"
+        side="blue"
       />
-
-      <ResultView
-        v-else
-        :outcome="outcome"
-        :secrets="state.secrets"
-        :history="state.history"
-        @play-again="reset()"
-      />
-    </main>
+    </div>
   </div>
 </template>
