@@ -95,4 +95,10 @@ describe('HistoryView', () => {
     const full = mount(HistoryView, { props: { records: [rec()], error: null } })
     expect(full.find('.history-actions button').attributes('disabled')).toBeUndefined()
   })
+
+  it('有 error 但仍有 records 时，列表仍显示（错误作为横幅）', () => {
+    const w = mount(HistoryView, { props: { records: [rec({ id: 'x' })], error: '历史删除失败' } })
+    expect(w.text()).toContain('历史删除失败')
+    expect(w.find('.history-list').exists()).toBe(true)
+  })
 })

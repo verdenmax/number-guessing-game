@@ -45,9 +45,9 @@ function confirmClear() {
     </header>
 
     <p v-if="error" class="error" role="alert">{{ error }}</p>
-    <p v-else-if="records.length === 0" class="empty">还没有历史记录，玩一局试试吧</p>
+    <p v-if="records.length === 0 && !error" class="empty">还没有历史记录，玩一局试试吧</p>
 
-    <ul v-else class="history-list">
+    <ul v-if="records.length" class="history-list">
       <li v-for="r in records" :key="r.id" class="history-row">
         <button type="button" class="row-main" @click="emit('open', r)">
           <span class="when">{{ fmtTime(r.playedAt) }}</span>
