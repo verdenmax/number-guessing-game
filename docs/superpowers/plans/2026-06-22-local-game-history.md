@@ -421,6 +421,30 @@ describe('buildGameRecord', () => {
     expect(newId()).not.toBe('')
     expect(newId()).not.toBe(newId())
   })
+
+  it('平局对局：outcome 为 draw', () => {
+    let s = createGame({ digits: 4 })
+    s = setSecret(s, 'p1', '0123')
+    s = setSecret(s, 'p2', '4567')
+    s = submitGuess(s, '4567') // p1 命中 p2(4567)
+    s = submitGuess(s, '0123') // p2 命中 p1(0123) → 双中平局 over
+    const r = buildGameRecord(s, { p1: null, p2: null }, { id: 'd', now: 1 })
+    expect(r.outcome).toEqual({ kind: 'draw' })
+    expect(r.rounds).toBe(1)
+  })
+
+  it('多回合：rounds 反映回合数', () => {
+    let s = createGame({ digits: 4 })
+    s = setSecret(s, 'p1', '0123')
+    s = setSecret(s, 'p2', '4567')
+    s = submitGuess(s, '8888') // 第1回合 p1 对 4567 → 0
+    s = submitGuess(s, '8888') // 第1回合 p2 对 0123 → 0 → 进入第2回合
+    s = submitGuess(s, '4567') // 第2回合 p1 命中
+    s = submitGuess(s, '8888') // 第2回合 p2 未中 → p1 胜 over
+    const r = buildGameRecord(s, { p1: null, p2: null }, { id: 'm', now: 1 })
+    expect(r.rounds).toBe(2)
+    expect(r.outcome).toEqual({ kind: 'win', winner: 'p1' })
+  })
 })
 ```
 
@@ -455,12 +479,16 @@ export function buildGameRecord(
   if (state.phase !== 'over') {
     throw new Error('buildGameRecord 只能在 over 阶段调用')
   }
+  const { p1, p2 } = state.secrets
+  if (p1 === null || p2 === null) {
+    throw new Error('over 阶段双方秘密数不应为 null')
+  }
   return {
     id: opts.id ?? newId(),
     playedAt: opts.now ?? Date.now(),
     digits: state.config.digits,
     names: { p1: names.p1, p2: names.p2 },
-    secrets: { p1: state.secrets.p1 as string, p2: state.secrets.p2 as string },
+    secrets: { p1, p2 },
     history: {
       p1: state.history.p1.map((r) => ({ ...r })),
       p2: state.history.p2.map((r) => ({ ...r })),
