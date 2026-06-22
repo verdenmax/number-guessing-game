@@ -1,6 +1,6 @@
 # L2 · 部署（GitHub Pages via Actions）
 
-> 上层：[L1 概览](../L1-overview.md) ｜ 相关：[设计 spec §10](../../superpowers/specs/2026-06-22-number-guessing-game-design.md)
+> 上层：[L1 概览](../L1-overview.md) ｜ 相关：[设计 spec §10](../superpowers/specs/2026-06-22-number-guessing-game-design.md)
 
 ## 为什么用 `base: './'`（相对路径）
 
@@ -20,15 +20,15 @@ export default defineConfig({
 
 ## GitHub Actions 流程
 
-工作流（`.github/workflows/deploy.yml`）在 `push` 到 `main` 时触发，按 **build → test → upload → deploy** 推进：
+工作流（`.github/workflows/deploy.yml`，该 workflow 文件由 Task 13 落地）在 `push` 到 `main` 时触发（也支持 `workflow_dispatch` 手动触发），使用 `concurrency` group `"pages"`（`cancel-in-progress: false`），按 **test → build → upload → deploy** 推进：
 
 ```mermaid
 flowchart LR
-    Push([push main]) --> CI[checkout + setup-node]
+    Push([push main / workflow_dispatch]) --> CI[checkout + setup-node 20]
     CI --> Install[npm ci 安装依赖]
-    Install --> Build[npm run build → dist/]
-    Build --> Test[npm run test 跑 Vitest]
-    Test --> Upload[upload-pages-artifact 上传 dist/]
+    Install --> Test[npm run test 跑 Vitest]
+    Test --> Build[npm run build → dist/]
+    Build --> Upload[upload-pages-artifact 上传 dist/]
     Upload --> Deploy[actions/deploy-pages 部署]
     Deploy --> Live([GitHub Pages 上线])
 ```
@@ -36,13 +36,16 @@ flowchart LR
 ASCII 版：
 
 ```
-push main
+on: push main（也支持 workflow_dispatch 手动触发）
+concurrency: group "pages"（cancel-in-progress: false）
+job build:
   └─ checkout 代码
-  └─ setup-node（启用 npm 缓存）
+  └─ setup-node 20（启用 npm 缓存）
   └─ npm ci                 # 干净安装（按 lockfile）
-  └─ npm run build          # vue-tsc 类型检查 + vite build → dist/
   └─ npm run test           # vitest run，确保逻辑正确才发布
+  └─ npm run build          # vue-tsc 类型检查 + vite build → dist/
   └─ actions/upload-pages-artifact（path: dist）
+job deploy (needs build):
   └─ actions/deploy-pages   # 部署到 Pages 环境
 ```
 

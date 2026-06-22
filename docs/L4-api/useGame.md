@@ -19,7 +19,7 @@ function useGame(initial: Partial<GameConfig> = {}): {
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `state` | `Ref<GameState>` | 完整可变引用（读 `state.value`）。模板里通过 `state.history` / `state.secrets` 访问。 |
+| `state` | `Ref<GameState>` | 可读引用（替换式更新）（读 `state.value`）。模板里通过 `state.history` / `state.secrets` 访问。 |
 | `phase` | `ComputedRef<Phase>` | `state.value.phase`（`'setup' \| 'playing' \| 'over'`）。 |
 | `current` | `ComputedRef<PlayerId>` | `state.value.current`，当前轮到谁猜。 |
 | `round` | `ComputedRef<number>` | `state.value.round`，回合数（从 1）。 |

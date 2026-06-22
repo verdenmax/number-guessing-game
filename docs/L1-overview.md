@@ -100,7 +100,7 @@ over --再来一局--> setup_p1
 | `src/components/` | UI 组件：`App.vue` 之下的 `SetupView / SecretInput / PlayView / GuessInput / HistoryList / HandoffScreen / ResultView`。 |
 | `src/App.vue` `src/main.ts` | 应用根：`App.vue` 依 `phase` 渲染三视图；`main.ts` 挂载到 `#app`。 |
 | `docs/` | 分层文档 L1–L4（本目录）与设计 spec（`docs/superpowers/`）。 |
-| `.github/workflows/` | GitHub Actions：构建并部署到 GitHub Pages（详见 [L2 部署](./L2-components/deploy.md)）。 |
+| `.github/workflows/` | GitHub Actions：构建并部署到 GitHub Pages（由 Task 13 落地，详见 [L2 部署](./L2-components/deploy.md)）。 |
 
 ## 如何运行
 

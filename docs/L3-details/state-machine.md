@@ -10,15 +10,15 @@
 stateDiagram-v2
     [*] --> setup_p1: createGame()
     setup_p1 --> setup_p2: setSecret(p1)
-    setup_p2 --> playing_p1: setSecret(p2)<br/>两人都设置→phase=playing, current=p1, round=1
+    setup_p2 --> playing_p1: setSecret(p2)，两人都设置→phase=playing, current=p1, round=1
 
-    playing_p1 --> playing_p2: submitGuess()（P1 猜）<br/>记录 pendingHits.p1，current=p2
-    playing_p2 --> settle: submitGuess()（P2 猜）<br/>记录 pendingHits.p2
+    playing_p1 --> playing_p2: submitGuess()（P1 猜），记录 pendingHits.p1，current=p2
+    playing_p2 --> settle: submitGuess()（P2 猜），记录 pendingHits.p2
 
     settle --> over_draw: p1Hit && p2Hit
     settle --> over_p1: 仅 p1Hit
     settle --> over_p2: 仅 p2Hit
-    settle --> playing_p1: 都没中<br/>round++，pendingHits 重置，current=p1
+    settle --> playing_p1: 都没中，round++，pendingHits 重置，current=p1
 
     over_draw --> [*]
     over_p1 --> [*]
