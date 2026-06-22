@@ -171,4 +171,65 @@ describe('solve', () => {
     expect(grid).toHaveLength(1)
     expect(grid[0]).toHaveLength(10)
   })
+
+  it('稀疏/短 assumptions 数组不误判 conflict（健壮性）', () => {
+    // assumptions 只给 pos0，数组长度不足 digits（其余视为无假设）
+    const grid = solve({
+      digits: 4,
+      guesses: [],
+      assumptions: [3],
+      crossedOut: new Set<string>(),
+    })
+    expect(grid[0][3]).toBe('assumed')
+    // 其它列不应因 undefined 假设变成 conflict
+    expect(grid[1][0]).toBe('available')
+    expect(grid[2][5]).not.toBe('conflict')
+  })
+
+  it('越界假设值被当作无假设，不清空 what-if', () => {
+    const grid = solve({
+      digits: 4,
+      guesses: [],
+      assumptions: [15, null, null, null],
+      crossedOut: new Set<string>(),
+    })
+    // 越界值不施加约束 → 其它格保持正常（available），不会全变 conflict
+    expect(grid[1][2]).toBe('available')
+  })
+
+  it('同一列假设 + 划除联动：假设 pos0=5 且划除 pos1 的 5（本就联动排除）', () => {
+    const grid = solve({
+      digits: 4,
+      guesses: [],
+      assumptions: [5, null, null, null],
+      crossedOut: new Set<string>(['1-5']),
+    })
+    expect(grid[0][5]).toBe('assumed')
+    expect(grid[1][5]).toBe('eliminated')
+  })
+
+  it('混合列：部分 available 部分 eliminated 并存', () => {
+    // 猜 0123 得 0 → 数字 0,1,2,3 分别在其所在位置被排除，但各列仍有可用数字
+    const grid = solve({
+      digits: 4,
+      guesses: [{ guess: '0123', feedback: 0 }],
+      assumptions: [null, null, null, null],
+      crossedOut: new Set<string>(),
+    })
+    expect(grid[0][0]).toBe('eliminated') // pos0 不可能是 0
+    expect(grid[0][9]).toBe('available') // pos0 仍可能是 9
+  })
+
+  it('整列划空：所有候选被划除后该列无 available（不崩溃）', () => {
+    // 划掉 pos0 全部 0-9 → pos0 无任何候选；函数应正常返回，不抛错
+    const crossed = new Set<string>()
+    for (let d = 0; d <= 9; d++) crossed.add(`0-${d}`)
+    const grid = solve({
+      digits: 4,
+      guesses: [],
+      assumptions: [null, null, null, null],
+      crossedOut: crossed,
+    })
+    expect(grid[0].every((s) => s === 'eliminated')).toBe(true)
+  })
 })

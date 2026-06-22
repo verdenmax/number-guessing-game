@@ -47,7 +47,8 @@ export function solve(input: SolverInput): Grid {
   const whatif = factPossible.filter((c) => {
     for (let i = 0; i < digits; i++) {
       const a = assumptions[i]
-      if (a !== null && c[i] !== String(a)) return false
+      // 仅对有效的 0-9 假设施加约束；null/undefined/越界值视为"无假设"，避免误清空 what-if
+      if (a != null && a >= 0 && a <= 9 && c[i] !== String(a)) return false
     }
     for (const key of crossedOut) {
       const [p, d] = key.split('-')
