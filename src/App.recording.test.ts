@@ -5,6 +5,9 @@ import App from './App.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
+import HistoryView from './components/HistoryView.vue'
+import HistoryDetail from './components/HistoryDetail.vue'
+import type { GameRecord } from './history/types'
 
 vi.mock('./history/store')
 const mockStore = vi.mocked(store)
@@ -69,5 +72,51 @@ describe('App 录入历史', () => {
     w.findComponent(PlayView).vm.$emit('guess', '0000')
     await flushPromises()
     expect(mockStore.saveGame.mock.calls[0][0].names).toEqual({ p1: 'Alice', p2: null })
+  })
+
+  const sampleRecord: GameRecord = {
+    id: 'r1',
+    playedAt: 1,
+    digits: 4,
+    names: { p1: null, p2: null },
+    secrets: { p1: '0123', p2: '4567' },
+    history: { p1: [], p2: [] },
+    outcome: { kind: 'draw' },
+    rounds: 1,
+  }
+
+  it('历史详情：打开记录 → 返回 → 回到列表', async () => {
+    mockStore.listGames.mockResolvedValue([sampleRecord])
+    const w = mount(App)
+    await w.find('.nav-history').trigger('click')
+    await flushPromises()
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+
+    w.findComponent(HistoryView).vm.$emit('open', sampleRecord)
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(true)
+    expect(w.findComponent(HistoryView).exists()).toBe(false)
+
+    w.findComponent(HistoryDetail).vm.$emit('back')
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(false)
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+  })
+
+  it('历史详情：删除 → 调用 deleteGame 并回到列表', async () => {
+    mockStore.listGames.mockResolvedValue([sampleRecord])
+    mockStore.deleteGame.mockResolvedValue(undefined)
+    const w = mount(App)
+    await w.find('.nav-history').trigger('click')
+    await flushPromises()
+    w.findComponent(HistoryView).vm.$emit('open', sampleRecord)
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(true)
+
+    w.findComponent(HistoryDetail).vm.$emit('delete', 'r1')
+    await flushPromises()
+    expect(mockStore.deleteGame).toHaveBeenCalledWith('r1')
+    expect(w.findComponent(HistoryDetail).exists()).toBe(false)
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
   })
 })
