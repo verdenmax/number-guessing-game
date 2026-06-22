@@ -28,6 +28,15 @@ describe('enumerateCandidates', () => {
   it('digits=2 返回 90 个（10*9）', () => {
     expect(enumerateCandidates(2)).toHaveLength(90)
   })
+
+  it('记忆化：同一 digits 多次调用返回同一引用（缓存）', () => {
+    expect(enumerateCandidates(4)).toBe(enumerateCandidates(4))
+  })
+
+  it('不同 digits 返回不同结果', () => {
+    expect(enumerateCandidates(4)).not.toBe(enumerateCandidates(3))
+    expect(enumerateCandidates(3)).toHaveLength(720)
+  })
 })
 
 describe('filterByFacts', () => {
@@ -231,5 +240,29 @@ describe('solve', () => {
       crossedOut: crossed,
     })
     expect(grid[0].every((s) => s === 'eliminated')).toBe(true)
+  })
+
+  it('矛盾时非假设格回退到仅事实推理（不整片置灰）', () => {
+    // 假设 pos0=1 且 pos1=1 → what-if 空（互不相同矛盾）
+    const grid = solve(baseInput({ assumptions: [1, 1, null, null] }))
+    // 冲突的假设格标红
+    expect(grid[0][1]).toBe('conflict')
+    expect(grid[1][1]).toBe('conflict')
+    // 非假设格不应因矛盾而全部置灰——无事实约束时应为 available
+    expect(grid[2][3]).toBe('available')
+    expect(grid[3][7]).toBe('available')
+  })
+
+  it('矛盾时非假设格仍反映事实推理（置灰/确定照常）', () => {
+    // 事实：猜 1234 得 4 → 秘密就是 1234；再加与事实矛盾的假设 pos0=9
+    const grid = solve(
+      baseInput({
+        guesses: [{ guess: '1234', feedback: 4 }],
+        assumptions: [9, null, null, null],
+      }),
+    )
+    expect(grid[0][9]).toBe('conflict') // 矛盾假设标红
+    expect(grid[1][2]).toBe('fixed') // pos1 事实确定是 2，不因矛盾变灰
+    expect(grid[0][1]).toBe('fixed') // pos0 事实确定是 1
   })
 })

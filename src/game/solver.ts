@@ -1,7 +1,12 @@
 import { feedback } from './engine'
 import type { GuessRecord } from './types'
 
+const candidateCache = new Map<number, string[]>()
+
 export function enumerateCandidates(digits: number): string[] {
+  const cached = candidateCache.get(digits)
+  if (cached) return cached
+
   const results: string[] = []
   const used = new Array<boolean>(10).fill(false)
   const current: string[] = []
@@ -22,6 +27,7 @@ export function enumerateCandidates(digits: number): string[] {
   }
 
   recurse()
+  candidateCache.set(digits, results)
   return results
 }
 
@@ -67,14 +73,18 @@ export function solve(input: SolverInput): Grid {
     whatifDigitsAt.push(new Set(whatif.map((c) => c[pos])))
   }
 
+  // 矛盾（what-if 空）时，非假设格回退到"仅事实推理"（基于 factPossible），
+  // 避免整片置灰；只有冲突的假设格标红。
+  const derivedDigitsAt = whatifEmpty ? factDigitsAt : whatifDigitsAt
+
   const grid: Grid = []
   for (let pos = 0; pos < digits; pos++) {
     const col: CellState[] = []
     for (let digit = 0; digit < 10; digit++) {
       const d = String(digit)
-      const posDigitOK = whatifDigitsAt[pos].has(d)
+      const posDigitOK = derivedDigitsAt[pos].has(d)
       const factHasIt = factDigitsAt[pos].has(d)
-      const colOnlyThis = whatifDigitsAt[pos].size === 1 && posDigitOK
+      const colOnlyThis = derivedDigitsAt[pos].size === 1 && posDigitOK
 
       let state: CellState
       if (assumptions[pos] === digit) {
