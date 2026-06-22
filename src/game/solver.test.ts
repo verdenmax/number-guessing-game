@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { enumerateCandidates, filterByFacts } from './solver'
+import { enumerateCandidates, filterByFacts, solve } from './solver'
 import type { GuessRecord } from './types'
+import type { SolverInput } from './solver'
 
 describe('enumerateCandidates', () => {
   it('digits=1 返回 0-9 共 10 个', () => {
@@ -77,5 +78,97 @@ describe('filterByFacts', () => {
       expect(m1).toBe(2)
       expect(m2).toBe(2)
     }
+  })
+})
+
+function baseInput(over: Partial<SolverInput> = {}): SolverInput {
+  return {
+    digits: 4,
+    guesses: [],
+    assumptions: [null, null, null, null],
+    crossedOut: new Set<string>(),
+    ...over,
+  }
+}
+
+describe('solve', () => {
+  it('返回 digits 列 × 10 行的网格', () => {
+    const grid = solve(baseInput())
+    expect(grid).toHaveLength(4)
+    for (const col of grid) expect(col).toHaveLength(10)
+  })
+
+  it('无任何信息时所有格为 available', () => {
+    const grid = solve(baseInput())
+    for (const col of grid) for (const s of col) expect(s).toBe('available')
+  })
+
+  it('猜 0000 正确数目 0 → 数字 0 在所有列 eliminated', () => {
+    const grid = solve(baseInput({ guesses: [{ guess: '0000', feedback: 0 }] }))
+    for (let pos = 0; pos < 4; pos++) {
+      expect(grid[pos][0]).toBe('eliminated')
+    }
+  })
+
+  it('完全确定时每列正确数字为 fixed', () => {
+    // 猜 1234 得 4 → 候选只剩 1234 → 各位对应数字 fixed
+    const grid = solve(baseInput({ guesses: [{ guess: '1234', feedback: 4 }] }))
+    expect(grid[0][1]).toBe('fixed')
+    expect(grid[1][2]).toBe('fixed')
+    expect(grid[2][3]).toBe('fixed')
+    expect(grid[3][4]).toBe('fixed')
+    // 同列其它数字 eliminated
+    expect(grid[0][2]).toBe('eliminated')
+  })
+
+  it('用户假设成立 → assumed', () => {
+    // 无事实约束，假设 pos0 = 5；5 在 pos0 仍可能 → assumed
+    const grid = solve(baseInput({ assumptions: [5, null, null, null] }))
+    expect(grid[0][5]).toBe('assumed')
+  })
+
+  it('假设联动收窄其它列：假设 pos0=5 → pos1..3 的 5 变 eliminated', () => {
+    // 因为互不相同，pos0 既然假设是 5，其它位不可能是 5
+    const grid = solve(baseInput({ assumptions: [5, null, null, null] }))
+    expect(grid[1][5]).toBe('eliminated')
+    expect(grid[2][5]).toBe('eliminated')
+    expect(grid[3][5]).toBe('eliminated')
+  })
+
+  it('矛盾假设 → 相关假设格 conflict', () => {
+    // 假设 pos0=1 且 pos1=1：互不相同使 what-if 为空 → 两格 conflict
+    const grid = solve(baseInput({ assumptions: [1, 1, null, null] }))
+    expect(grid[0][1]).toBe('conflict')
+    expect(grid[1][1]).toBe('conflict')
+  })
+
+  it('假设与事实矛盾 → conflict', () => {
+    // 事实：猜 1234 得 4 → 秘密就是 1234；假设 pos0=9 与之矛盾
+    const grid = solve(
+      baseInput({
+        guesses: [{ guess: '1234', feedback: 4 }],
+        assumptions: [9, null, null, null],
+      }),
+    )
+    expect(grid[0][9]).toBe('conflict')
+  })
+
+  it('手动划除 → eliminated', () => {
+    const grid = solve(baseInput({ crossedOut: new Set(['0-7']) }))
+    expect(grid[0][7]).toBe('eliminated')
+  })
+
+  it('划除联动：划掉 pos0 除某值外所有 → 余下值 fixed', () => {
+    // 划掉 pos0 的 0..8（保留 9）→ pos0 只能是 9 → fixed
+    const crossed = new Set<string>()
+    for (let d = 0; d <= 8; d++) crossed.add(`0-${d}`)
+    const grid = solve(baseInput({ crossedOut: crossed }))
+    expect(grid[0][9]).toBe('fixed')
+  })
+
+  it('digits=1 网格为 1 列', () => {
+    const grid = solve(baseInput({ digits: 1, assumptions: [null] }))
+    expect(grid).toHaveLength(1)
+    expect(grid[0]).toHaveLength(10)
   })
 })
