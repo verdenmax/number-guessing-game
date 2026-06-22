@@ -29,7 +29,7 @@ function confirmDelete() {
     <header class="detail-head">
       <button type="button" @click="emit('back')">← 列表</button>
       <span class="when">{{ fmtTime }}</span>
-      <span class="result">{{ outcomeText }} · {{ record.digits }}位 · {{ record.rounds }}回合</span>
+      <span class="detail-outcome">{{ outcomeText }} · {{ record.digits }}位 · {{ record.rounds }}回合</span>
     </header>
 
     <p class="reveal">

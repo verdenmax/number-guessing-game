@@ -53,7 +53,7 @@ function confirmClear() {
         <button type="button" class="row-main" @click="emit('open', r)">
           <span class="when">{{ fmtTime(r.playedAt) }}</span>
           <span class="match">{{ matchTitle(r) }}</span>
-          <span class="result">{{ outcomeText(r) }}</span>
+          <span class="row-outcome">{{ outcomeText(r) }}</span>
           <span class="meta">{{ r.digits }}位 · {{ r.rounds }}回合</span>
         </button>
         <button type="button" class="row-del" @click="confirmRemove(r.id)">删除</button>

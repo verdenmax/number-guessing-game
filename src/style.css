@@ -585,10 +585,17 @@ button:disabled {
   border-radius: var(--radius-sm);
   font-size: 1rem;
   font-family: var(--font-sans);
+  letter-spacing: normal;
+  text-align: left;
 }
 .name-field input:focus {
   outline: 2px solid var(--accent);
   border-color: var(--accent);
+}
+
+.detail-title {
+  margin: 0 0 12px;
+  font-size: 1.2rem;
 }
 
 /* ---------- 顶部标题栏 + 历史入口 ---------- */
@@ -615,8 +622,9 @@ button:disabled {
 }
 
 /* ---------- 历史列表 ---------- */
-.history-page {
-  width: min(680px, 96vw);
+.app.history-page {
+  max-width: min(680px, 96vw);
+  flex: 0 1 min(680px, 96vw);
 }
 .history-head {
   display: flex;
@@ -631,6 +639,7 @@ button:disabled {
 .history-actions button {
   border: 1px solid var(--border);
   background: var(--card);
+  color: var(--text);
   border-radius: var(--radius-sm);
   padding: 6px 12px;
   cursor: pointer;
@@ -661,6 +670,7 @@ button:disabled {
   text-align: left;
   border: 1px solid var(--border);
   background: var(--card);
+  color: var(--text);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   cursor: pointer;
@@ -679,6 +689,9 @@ button:disabled {
 .row-main .meta {
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+.row-main .row-outcome {
+  color: var(--text);
 }
 .row-del {
   border: 1px solid var(--border);
@@ -704,11 +717,16 @@ button:disabled {
 .history-detail .detail-head button {
   border: 1px solid var(--border);
   background: var(--card);
+  color: var(--text);
   border-radius: var(--radius-sm);
   padding: 6px 12px;
   cursor: pointer;
 }
 .history-detail .detail-head .when {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.history-detail .detail-outcome {
   color: var(--text-muted);
   font-size: 0.85rem;
 }
@@ -728,7 +746,7 @@ button:disabled {
 
 /* ---------- 结果页：保存提示 + 操作 ---------- */
 .saved-hint {
-  color: #16a34a;
+  color: #15803d;
   font-size: 0.9rem;
 }
 .result-actions {
