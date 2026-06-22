@@ -13,8 +13,10 @@ const value = ref('')
 const masked = ref(true)
 
 function onInput(e: Event) {
-  const raw = (e.target as HTMLInputElement).value
-  value.value = raw.replace(/[^0-9]/g, '').slice(0, props.digits)
+  const el = e.target as HTMLInputElement
+  const clean = el.value.replace(/[^0-9]/g, '').slice(0, props.digits)
+  value.value = clean
+  el.value = clean
 }
 
 const result = computed(() => props.validate(value.value))
@@ -37,6 +39,7 @@ function confirm() {
         :value="value"
         inputmode="numeric"
         :maxlength="digits"
+        :aria-label="label"
         @input="onInput"
         @keyup.enter="confirm"
       />
@@ -44,7 +47,7 @@ function confirm() {
         {{ masked ? '显示' : '隐藏' }}
       </button>
     </div>
-    <p v-if="errorText" class="error">{{ errorText }}</p>
+    <p v-if="errorText" class="error" role="alert">{{ errorText }}</p>
     <button type="button" class="confirm" :disabled="!canSubmit" @click="confirm">确认</button>
   </div>
 </template>
