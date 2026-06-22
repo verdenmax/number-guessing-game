@@ -17,12 +17,22 @@ export function useHistory() {
   }
 
   const remove = async (id: string) => {
-    await deleteGame(id)
+    try {
+      await deleteGame(id)
+    } catch {
+      error.value = '历史删除失败'
+      return
+    }
     await load()
   }
 
   const clear = async () => {
-    await clearAll()
+    try {
+      await clearAll()
+    } catch {
+      error.value = '历史清空失败'
+      return
+    }
     await load()
   }
 

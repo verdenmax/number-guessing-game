@@ -57,4 +57,20 @@ describe('useHistory', () => {
     expect(mockStore.clearAll).toHaveBeenCalled()
     expect(h.records.value).toEqual([])
   })
+
+  it('remove 失败时设置 error 且不向外抛、跳过重载', async () => {
+    mockStore.deleteGame.mockRejectedValue(new Error('boom'))
+    const h = useHistory()
+    await h.remove('a') // 不应抛出
+    expect(h.error.value).toBe('历史删除失败')
+    expect(mockStore.listGames).not.toHaveBeenCalled()
+  })
+
+  it('clear 失败时设置 error 且不向外抛、跳过重载', async () => {
+    mockStore.clearAll.mockRejectedValue(new Error('boom'))
+    const h = useHistory()
+    await h.clear() // 不应抛出
+    expect(h.error.value).toBe('历史清空失败')
+    expect(mockStore.listGames).not.toHaveBeenCalled()
+  })
 })
