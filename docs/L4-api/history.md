@@ -16,7 +16,7 @@ interface GameRecord {
   names: { p1: string | null; p2: string | null }    // 可选昵称
   secrets: { p1: string; p2: string }                // 双方秘密数（结束后必非 null）
   history: { p1: GuessRecord[]; p2: GuessRecord[] }   // 双方完整猜测记录（逐条浅拷贝，脱离原 state）
-  outcome: Outcome                                    // 'win'(winner) | 'draw' | 'ongoing'
+  outcome: Outcome                                    // 'win'(winner) | 'draw' | 'ongoing'；持久化记录恒为 win/draw
   rounds: number
 }
 ```
