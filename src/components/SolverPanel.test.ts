@@ -99,4 +99,59 @@ describe('SolverPanel 交互', () => {
     // 之前划除的格恢复 available
     expect(after[7 * 4 + 1].classes()).toContain('available')
   })
+
+  it('Shift+左键 → 划除（eliminated）而非假设', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    const cells = w.findAll('.solver-cell')
+    const idx = 5 * 4 + 0
+    await cells[idx].trigger('click', { shiftKey: true })
+    expect(cells[idx].classes()).toContain('eliminated')
+    expect(cells[idx].classes()).not.toContain('assumed')
+  })
+
+  it('键盘 Delete → 划除（无障碍路径）', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    const cells = w.findAll('.solver-cell')
+    const idx = 4 * 4 + 2
+    await cells[idx].trigger('keydown', { key: 'Delete' })
+    expect(cells[idx].classes()).toContain('eliminated')
+  })
+
+  it('假设格 aria-pressed=true', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    const cells = w.findAll('.solver-cell')
+    const idx = 5 * 4 + 0
+    await cells[idx].trigger('click')
+    expect(cells[idx].attributes('aria-pressed')).toBe('true')
+  })
+})
+
+describe('SolverPanel what-if 集成', () => {
+  it('强行假设一个被事实排除的数字 → conflict（联动 solve 实时反映）', async () => {
+    // 事实：猜 1234 得 4 → 秘密就是 1234；强行假设 pos0=9 应标红 conflict
+    const w = mount(SolverPanel, {
+      props: { digits: 4, guesses: [{ guess: '1234', feedback: 4 }], side: 'red' },
+    })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const cells = w.findAll('.solver-cell')
+    const idx = 9 * 4 + 0 // pos0 digit9
+    await cells[idx].trigger('click')
+    expect(cells[idx].classes()).toContain('conflict')
+  })
+
+  it('假设某位 → 同数字在其它列联动 eliminated', async () => {
+    const w = mount(SolverPanel, {
+      props: { digits: 4, guesses: [], side: 'red' },
+    })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const cells = w.findAll('.solver-cell')
+    await cells[5 * 4 + 0].trigger('click') // 假设 pos0=5
+    // pos1 的数字 5 应联动 eliminated（互不相同）
+    expect(cells[5 * 4 + 1].classes()).toContain('eliminated')
+  })
 })

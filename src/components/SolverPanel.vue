@@ -38,6 +38,11 @@ function toggleCrossOut(pos: number, digit: number) {
   crossedOut.value = next
 }
 
+function onCellClick(e: MouseEvent, pos: number, digit: number) {
+  if (e.shiftKey) toggleCrossOut(pos, digit)
+  else toggleAssumption(pos, digit)
+}
+
 function reset() {
   assumptions.value = Array.from({ length: props.digits }, () => null)
   crossedOut.value = new Set()
@@ -60,8 +65,10 @@ function reset() {
             class="solver-cell"
             :class="grid[pos - 1][digit - 1]"
             :aria-label="`位${pos} 数字${digit - 1} ${grid[pos - 1][digit - 1]}`"
-            @click="toggleAssumption(pos - 1, digit - 1)"
+            :aria-pressed="grid[pos - 1][digit - 1] === 'assumed'"
+            @click="onCellClick($event, pos - 1, digit - 1)"
             @contextmenu.prevent="toggleCrossOut(pos - 1, digit - 1)"
+            @keydown.delete.prevent="toggleCrossOut(pos - 1, digit - 1)"
           >
             {{ digit - 1 }}
           </button>
