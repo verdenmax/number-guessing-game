@@ -74,4 +74,25 @@ describe('HistoryView', () => {
     await buttons[buttons.length - 1].trigger('click') // 最后一个 = 返回
     expect(w.emitted('back')).toHaveLength(1)
   })
+
+  it('取消删除时不 emit remove', async () => {
+    vi.stubGlobal('confirm', () => false)
+    const w = mount(HistoryView, { props: { records: [rec({ id: 'x' })], error: null } })
+    await w.find('.row-del').trigger('click')
+    expect(w.emitted('remove')).toBeUndefined()
+  })
+
+  it('取消清空时不 emit clear', async () => {
+    vi.stubGlobal('confirm', () => false)
+    const w = mount(HistoryView, { props: { records: [rec()], error: null } })
+    await w.find('.history-actions button').trigger('click')
+    expect(w.emitted('clear')).toBeUndefined()
+  })
+
+  it('空列表时清空按钮 disabled，非空时启用', () => {
+    const empty = mount(HistoryView, { props: { records: [], error: null } })
+    expect(empty.find('.history-actions button').attributes('disabled')).toBeDefined()
+    const full = mount(HistoryView, { props: { records: [rec()], error: null } })
+    expect(full.find('.history-actions button').attributes('disabled')).toBeUndefined()
+  })
 })
