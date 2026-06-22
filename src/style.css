@@ -404,3 +404,147 @@ button:disabled {
     min-width: 0;
   }
 }
+
+/* ---------- Table: 三栏布局（playing 阶段） ---------- */
+.table {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.table > .app {
+  flex: 0 1 460px;
+}
+
+/* ---------- Solver panel ---------- */
+.solver {
+  flex: 0 1 auto;
+  min-width: 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  align-self: stretch;
+}
+
+.solver.side-red {
+  border-top: 5px solid var(--red);
+}
+
+.solver.side-blue {
+  border-top: 5px solid var(--blue);
+}
+
+.solver-toggle {
+  width: 100%;
+  border-radius: 0;
+  text-align: left;
+  background: var(--card);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.solver.side-red .solver-toggle {
+  color: var(--red);
+}
+
+.solver.side-blue .solver-toggle {
+  color: var(--blue);
+}
+
+.solver-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.solver-grid {
+  display: grid;
+  gap: 4px;
+}
+
+.solver-col-head {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding-bottom: 2px;
+}
+
+.solver-cell {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 6px 0;
+  border-radius: 8px;
+  background: #f3f4fb;
+  color: var(--text);
+  border: 1.5px solid transparent;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+/* 格子状态配色 */
+.solver-cell.available {
+  background: #f3f4fb;
+  color: var(--text);
+}
+
+.solver-cell.eliminated {
+  background: #f3f4f6;
+  color: #c2c5cc;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.solver-cell.fixed {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #4ade80;
+}
+
+.solver-cell.assumed {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.solver-cell.conflict {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #ef4444;
+}
+
+.solver-reset {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.85rem;
+  padding: 8px 12px;
+}
+
+/* ---------- 展示优化 ---------- */
+.history .guess {
+  word-spacing: 0.15em;
+}
+
+@media (max-width: 920px) {
+  .table {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .table > .app {
+    order: -1;
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .solver {
+    width: 100%;
+    max-width: 460px;
+  }
+}
