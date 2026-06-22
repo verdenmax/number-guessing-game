@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { describe, it, expect, beforeEach } from 'vitest'
-import { saveGame, listGames, clearAll } from './store'
+import { saveGame, listGames, getGame, deleteGame, clearAll } from './store'
 import type { GameRecord } from './types'
 
 function rec(id: string, playedAt: number): GameRecord {
@@ -58,5 +58,34 @@ describe('history store: save/list/clear', () => {
     expect(await listGames()).toEqual([])
     await clearAll() // 空库再清不抛
     expect(await listGames()).toEqual([])
+  })
+})
+
+describe('history store: get/delete', () => {
+  beforeEach(async () => {
+    await clearAll()
+  })
+
+  it('getGame 命中返回该记录', async () => {
+    await saveGame(rec('a', 1000))
+    expect(await getGame('a')).toEqual(rec('a', 1000))
+  })
+
+  it('getGame 不存在返回 undefined', async () => {
+    expect(await getGame('nope')).toBeUndefined()
+  })
+
+  it('deleteGame 删除指定记录', async () => {
+    await saveGame(rec('a', 1000))
+    await saveGame(rec('b', 2000))
+    await deleteGame('a')
+    const all = await listGames()
+    expect(all.map((r) => r.id)).toEqual(['b'])
+  })
+
+  it('deleteGame 删除不存在的 id 不抛错（no-op）', async () => {
+    await saveGame(rec('a', 1000))
+    await deleteGame('ghost')
+    expect((await listGames()).map((r) => r.id)).toEqual(['a'])
   })
 })
