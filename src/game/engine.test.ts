@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { feedback, createGame } from './engine'
+import { feedback, createGame, setSecret } from './engine'
 
 describe('feedback', () => {
   it('全部位置正确返回位数', () => {
@@ -57,5 +57,42 @@ describe('createGame', () => {
   })
   it('位数非整数抛错', () => {
     expect(() => createGame({ digits: 3.5 })).toThrow()
+  })
+})
+
+describe('setSecret', () => {
+  it('P1 设置后仍处于 setup，等待 P2', () => {
+    const s = setSecret(createGame(), 'p1', '1234')
+    expect(s.phase).toBe('setup')
+    expect(s.secrets).toEqual({ p1: '1234', p2: null })
+  })
+  it('P2 设置后转入 playing，P1 先手，回合 1', () => {
+    let s = setSecret(createGame(), 'p1', '1234')
+    s = setSecret(s, 'p2', '5678')
+    expect(s.phase).toBe('playing')
+    expect(s.current).toBe('p1')
+    expect(s.round).toBe(1)
+    expect(s.secrets).toEqual({ p1: '1234', p2: '5678' })
+  })
+  it('保留前导 0', () => {
+    const s = setSecret(createGame(), 'p1', '0891')
+    expect(s.secrets.p1).toBe('0891')
+  })
+  it('非 setup 阶段调用抛错', () => {
+    let s = setSecret(createGame(), 'p1', '1234')
+    s = setSecret(s, 'p2', '5678') // 现在是 playing
+    expect(() => setSecret(s, 'p1', '4321')).toThrow()
+  })
+  it('重复设置同一玩家抛错', () => {
+    const s = setSecret(createGame(), 'p1', '1234')
+    expect(() => setSecret(s, 'p1', '4321')).toThrow()
+  })
+  it('非法秘密数抛错', () => {
+    expect(() => setSecret(createGame(), 'p1', '1224')).toThrow()
+  })
+  it('不修改原状态（不可变）', () => {
+    const s0 = createGame()
+    setSecret(s0, 'p1', '1234')
+    expect(s0.secrets.p1).toBeNull()
   })
 })
