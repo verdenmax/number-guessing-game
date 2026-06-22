@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { ValidationResult } from '../game/types'
 
 const props = defineProps<{
@@ -10,6 +10,8 @@ const props = defineProps<{
 const emit = defineEmits<{ confirm: [value: string] }>()
 
 const value = ref('')
+const inputEl = ref<HTMLInputElement | null>(null)
+onMounted(() => inputEl.value?.focus())
 
 function onInput(e: Event) {
   const el = e.target as HTMLInputElement
@@ -33,6 +35,7 @@ function confirm() {
   <div class="guess-input">
     <p class="label">{{ label }}</p>
     <input
+      ref="inputEl"
       type="text"
       :value="value"
       inputmode="numeric"

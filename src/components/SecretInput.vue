@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { ValidationResult } from '../game/types'
 
 const props = defineProps<{
@@ -11,6 +11,8 @@ const emit = defineEmits<{ confirm: [value: string] }>()
 
 const value = ref('')
 const masked = ref(true)
+const inputEl = ref<HTMLInputElement | null>(null)
+onMounted(() => inputEl.value?.focus())
 
 function onInput(e: Event) {
   const el = e.target as HTMLInputElement
@@ -35,6 +37,7 @@ function confirm() {
     <p class="label">{{ label }}</p>
     <div class="row">
       <input
+        ref="inputEl"
         :type="masked ? 'password' : 'text'"
         :value="value"
         inputmode="numeric"

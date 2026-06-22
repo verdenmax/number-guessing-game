@@ -14,12 +14,12 @@ describe('ResultView', () => {
     expect(w.text()).toContain('平局')
   })
 
-  it('胜利文案：玩家2 获胜', () => {
+  it('胜利文案：蓝方获胜', () => {
     const outcome: Outcome = { kind: 'win', winner: 'p2' }
     const w = mount(ResultView, {
       props: { outcome, secrets: { p1: '1234', p2: '5678' }, history: emptyHistory },
     })
-    expect(w.text()).toContain('玩家2 获胜')
+    expect(w.text()).toContain('蓝方获胜')
   })
 
   it('公开双方秘密', () => {

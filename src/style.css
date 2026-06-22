@@ -7,6 +7,15 @@
   --primary: #5b5bd6;
   --primary-hover: #4848c4;
   --primary-soft: #ececfb;
+  --red: #dc2626;
+  --red-soft: #fdeaea;
+  --red-hover: #b91c1c;
+  --blue: #2563eb;
+  --blue-soft: #e8f0fe;
+  --blue-hover: #1d4ed8;
+  --accent: #5b5bd6;
+  --accent-soft: #ececfb;
+  --accent-hover: #4848c4;
   --danger: #dc2626;
   --border: #e5e7eb;
   --radius: 14px;
@@ -33,11 +42,6 @@ body {
 
 body {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
-  background: var(--bg-gradient);
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
@@ -47,8 +51,36 @@ body {
 
 #app {
   width: 100%;
+}
+
+/* ---------- Stage: full-page colored backdrop by current side ---------- */
+.stage {
+  min-height: 100vh;
+  width: 100%;
   display: flex;
+  align-items: center;
   justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg-gradient);
+  transition: background 0.5s ease;
+}
+
+.stage.side-red {
+  --accent: var(--red);
+  --accent-soft: var(--red-soft);
+  --accent-hover: var(--red-hover);
+  background: linear-gradient(160deg, #fdecec 0%, #fbdada 100%);
+}
+
+.stage.side-blue {
+  --accent: var(--blue);
+  --accent-soft: var(--blue-soft);
+  --accent-hover: var(--blue-hover);
+  background: linear-gradient(160deg, #eaf1fe 0%, #d7e4fd 100%);
+}
+
+.stage.side-neutral {
+  background: var(--bg-gradient);
 }
 
 /* ---------- App card ---------- */
@@ -56,8 +88,10 @@ body {
   width: 100%;
   max-width: 460px;
   background: var(--card);
+  border-top: 5px solid var(--accent);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  transition: border-color 0.4s ease;
   padding: 32px 28px;
   display: flex;
   flex-direction: column;
@@ -76,9 +110,9 @@ body {
 /* ---------- Text helpers ---------- */
 .label {
   margin: 0 0 4px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
   text-align: center;
 }
 
@@ -137,8 +171,8 @@ input::placeholder {
 }
 
 input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(91, 91, 214, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
 /* ---------- Buttons ---------- */
@@ -150,14 +184,14 @@ button {
   border: none;
   border-radius: var(--radius-sm);
   padding: 13px 18px;
-  background: var(--primary);
+  background: var(--accent);
   color: #fff;
   transition: background-color 0.18s ease, transform 0.06s ease, box-shadow 0.18s ease,
     opacity 0.18s ease;
 }
 
 button:hover {
-  background: var(--primary-hover);
+  background: var(--accent-hover);
 }
 
 button:active {
@@ -177,8 +211,8 @@ button:disabled {
 /* Secondary button: 显示/隐藏 toggle */
 .toggle {
   flex: 0 0 auto;
-  background: var(--primary-soft);
-  color: var(--primary);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 0.9rem;
   padding: 0 16px;
   border: 1px solid var(--border);
@@ -196,8 +230,8 @@ button:disabled {
   gap: 20px;
   text-align: center;
   padding: 28px 20px;
-  background: var(--primary-soft);
-  border: 2px dashed rgba(91, 91, 214, 0.4);
+  background: var(--accent-soft);
+  border: 2px dashed var(--accent);
   border-radius: var(--radius);
 }
 
@@ -281,6 +315,25 @@ button:disabled {
   text-align: center;
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+/* History red/blue theming by side */
+.history.side-red h3 {
+  color: var(--red);
+}
+
+.history.side-red .fb {
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+.history.side-blue h3 {
+  color: var(--blue);
+}
+
+.history.side-blue .fb {
+  color: var(--blue);
+  background: var(--blue-soft);
 }
 
 /* ---------- Result view ---------- */

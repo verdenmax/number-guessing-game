@@ -6,7 +6,7 @@ import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
 
 describe('App 整合', () => {
-  it('完整一局：双方设置 → 猜测 → 玩家1 获胜', async () => {
+  it('完整一局：双方设置 → 猜测 → 红方获胜', async () => {
     const w = mount(App)
     expect(w.findComponent(SetupView).exists()).toBe(true)
 
@@ -21,7 +21,7 @@ describe('App 整合', () => {
     await w.vm.$nextTick()
 
     expect(w.findComponent(ResultView).exists()).toBe(true)
-    expect(w.findComponent(ResultView).text()).toContain('玩家1 获胜')
+    expect(w.findComponent(ResultView).text()).toContain('红方获胜')
   })
 
   it('再来一局回到设置阶段', async () => {
