@@ -12,7 +12,7 @@ const {
 
 <template>
   <main class="app">
-    <h1>双人猜数字</h1>
+    <h1>Guessing Number</h1>
 
     <SetupView
       v-if="phase === 'setup'"
