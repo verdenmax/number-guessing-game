@@ -23,6 +23,25 @@ const grid = computed(() =>
 )
 
 const sideName = computed(() => (props.side === 'red' ? '红方' : '蓝方'))
+
+function toggleAssumption(pos: number, digit: number) {
+  const next = assumptions.value.slice()
+  next[pos] = next[pos] === digit ? null : digit
+  assumptions.value = next
+}
+
+function toggleCrossOut(pos: number, digit: number) {
+  const next = new Set(crossedOut.value)
+  const key = `${pos}-${digit}`
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  crossedOut.value = next
+}
+
+function reset() {
+  assumptions.value = Array.from({ length: props.digits }, () => null)
+  crossedOut.value = new Set()
+}
 </script>
 
 <template>
@@ -41,11 +60,14 @@ const sideName = computed(() => (props.side === 'red' ? '红方' : '蓝方'))
             class="solver-cell"
             :class="grid[pos - 1][digit - 1]"
             :aria-label="`位${pos} 数字${digit - 1} ${grid[pos - 1][digit - 1]}`"
+            @click="toggleAssumption(pos - 1, digit - 1)"
+            @contextmenu.prevent="toggleCrossOut(pos - 1, digit - 1)"
           >
             {{ digit - 1 }}
           </button>
         </template>
       </div>
+      <button type="button" class="solver-reset" @click="reset">重置假设</button>
     </div>
   </section>
 </template>
