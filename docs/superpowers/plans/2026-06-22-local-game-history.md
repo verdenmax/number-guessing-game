@@ -1280,6 +1280,73 @@ git add src/components/ResultView.vue src/components/ResultView.test.ts
 git commit -m "feat(history): ResultView 显示昵称/保存提示 + 查看历史按钮"
 ```
 
+## Task 10b: useHistory `remove`/`clear` 错误降级（采纳 Task 5 代码审查）
+
+落实 Task 5 审查的 carry-forward：让 `remove`/`clear` 的写失败像 `load` 一样降级到 `error`（不再向外 reject），这样 App 的 `@remove`/`@clear` 接线无需 try/catch，也不会产生未处理的 Promise rejection。
+
+**Files:**
+- Modify: `src/composables/useHistory.ts`
+- Test: `src/composables/useHistory.test.ts`（追加 2 用例）
+
+- [ ] **Step 1: 追加失败测试到 `src/composables/useHistory.test.ts`**
+在 `describe('useHistory', ...)` 内、已有用例之后追加：
+```typescript
+  it('remove 失败时设置 error 且不向外抛、跳过重载', async () => {
+    mockStore.deleteGame.mockRejectedValue(new Error('boom'))
+    const h = useHistory()
+    await h.remove('a') // 不应抛出
+    expect(h.error.value).toBe('历史删除失败')
+    expect(mockStore.listGames).not.toHaveBeenCalled()
+  })
+
+  it('clear 失败时设置 error 且不向外抛、跳过重载', async () => {
+    mockStore.clearAll.mockRejectedValue(new Error('boom'))
+    const h = useHistory()
+    await h.clear() // 不应抛出
+    expect(h.error.value).toBe('历史清空失败')
+    expect(mockStore.listGames).not.toHaveBeenCalled()
+  })
+```
+
+- [ ] **Step 2: 运行测试，确认失败**
+Run: `npx vitest run src/composables/useHistory.test.ts`
+Expected: FAIL —— 失败路径当前会 reject（unhandled），error 未被设置。
+
+- [ ] **Step 3: 修改 `src/composables/useHistory.ts` 的 `remove`/`clear`**
+把这两个函数替换为：
+```typescript
+  const remove = async (id: string) => {
+    try {
+      await deleteGame(id)
+    } catch {
+      error.value = '历史删除失败'
+      return
+    }
+    await load()
+  }
+
+  const clear = async () => {
+    try {
+      await clearAll()
+    } catch {
+      error.value = '历史清空失败'
+      return
+    }
+    await load()
+  }
+```
+（`load` 已自带 try/catch；成功路径仍重载并把 error 归零。`catch {` 无绑定以满足 noUnusedLocals。）
+
+- [ ] **Step 4: 运行测试，确认通过**
+Run: `npx vitest run src/composables/useHistory.test.ts`
+Expected: PASS（原 4 + 新 2 = 6）。既有 remove/clear 成功用例仍绿。
+
+- [ ] **Step 5: Commit**
+```bash
+git add src/composables/useHistory.ts src/composables/useHistory.test.ts
+git commit -m "feat(history): useHistory remove/clear 写失败降级到 error"
+```
+
 ## Task 11: App 整合（录入 + 视图切换）
 
 整文件重写 `App.vue`：提升 `names`、`watch(phase)` 自动保存、`view` 切换、挂 HistoryView/HistoryDetail、历史入口按钮。录入逻辑用独立测试文件（mock store）验证；视图切换在 `App.test.ts` 验证。
@@ -1742,6 +1809,10 @@ git commit -m "feat(history): App 整合录入历史 + 历史视图切换"
   gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
+}
+.result-actions button {
+  padding: 12px 18px;
+  font-size: 1.02rem;
 }
 ```
 
