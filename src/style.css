@@ -759,3 +759,18 @@ button:disabled {
   padding: 12px 18px;
   font-size: 1.02rem;
 }
+
+/* 历史页加宽仅用于桌面行布局；列布局(≤920px)下恢复自动主轴尺寸，
+   避免 flex-basis 泄漏到纵轴把卡片撑高（代码审查回归修复） */
+@media (max-width: 920px) {
+  .app.history-page {
+    flex: 1 1 auto;
+  }
+}
+/* 窄屏：历史行 4 列网格折成 2 列，避免横向溢出 */
+@media (max-width: 480px) {
+  .row-main {
+    grid-template-columns: 1fr auto;
+    row-gap: 4px;
+  }
+}
