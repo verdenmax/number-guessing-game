@@ -1,7 +1,42 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useGame } from './composables/useGame'
+import SetupView from './components/SetupView.vue'
+import PlayView from './components/PlayView.vue'
+import ResultView from './components/ResultView.vue'
+
+const {
+  phase, current, round, outcome, config, state,
+  applySecret, applyGuess, checkSecret, checkGuess, reset,
+} = useGame()
+</script>
 
 <template>
-  <main>
+  <main class="app">
     <h1>双人猜数字</h1>
+
+    <SetupView
+      v-if="phase === 'setup'"
+      :digits="config.digits"
+      :validate="checkSecret"
+      @set-secret="applySecret"
+    />
+
+    <PlayView
+      v-else-if="phase === 'playing'"
+      :digits="config.digits"
+      :current="current"
+      :round="round"
+      :validate="checkGuess"
+      :history="state.history"
+      @guess="applyGuess"
+    />
+
+    <ResultView
+      v-else
+      :outcome="outcome"
+      :secrets="state.secrets"
+      :history="state.history"
+      @play-again="reset()"
+    />
   </main>
 </template>
