@@ -48,4 +48,28 @@ describe('buildGameRecord', () => {
     expect(newId()).not.toBe('')
     expect(newId()).not.toBe(newId())
   })
+
+  it('平局对局：outcome 为 draw', () => {
+    let s = createGame({ digits: 4 })
+    s = setSecret(s, 'p1', '0123')
+    s = setSecret(s, 'p2', '4567')
+    s = submitGuess(s, '4567') // p1 命中 p2(4567)
+    s = submitGuess(s, '0123') // p2 命中 p1(0123) → 双中平局 over
+    const r = buildGameRecord(s, { p1: null, p2: null }, { id: 'd', now: 1 })
+    expect(r.outcome).toEqual({ kind: 'draw' })
+    expect(r.rounds).toBe(1)
+  })
+
+  it('多回合：rounds 反映回合数', () => {
+    let s = createGame({ digits: 4 })
+    s = setSecret(s, 'p1', '0123')
+    s = setSecret(s, 'p2', '4567')
+    s = submitGuess(s, '8888') // 第1回合 p1 对 4567 → 0
+    s = submitGuess(s, '8888') // 第1回合 p2 对 0123 → 0 → 进入第2回合
+    s = submitGuess(s, '4567') // 第2回合 p1 命中
+    s = submitGuess(s, '8888') // 第2回合 p2 未中 → p1 胜 over
+    const r = buildGameRecord(s, { p1: null, p2: null }, { id: 'm', now: 1 })
+    expect(r.rounds).toBe(2)
+    expect(r.outcome).toEqual({ kind: 'win', winner: 'p1' })
+  })
 })
