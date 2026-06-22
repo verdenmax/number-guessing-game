@@ -1948,6 +1948,38 @@ git add src/style.css
 git commit -m "style(history): 昵称输入/历史列表/详情/保存提示样式"
 ```
 
+### Task 12 修正（采纳代码质量审查 —— 修复白字白底/类名冲突/宽度失效）
+
+代码审查发现：全局 `button{color:#fff;background:var(--accent)}` 使新按钮设白底却没设字色 → 白字白底；`<span class="result">` 与 ResultView 容器类 `.result` 冲突；`.app{max-width:460px}` 压死 `.history-page` 宽度。修复：
+
+- [ ] **组件改名（消除 `.result` 类冲突）**
+  - `src/components/HistoryView.vue`：行内结果 `<span class="result">{{ outcomeText(r) }}</span>` → `<span class="row-outcome">{{ outcomeText(r) }}</span>`。
+  - `src/components/HistoryDetail.vue`：`<span class="result">{{ outcomeText }} · …</span>` → `<span class="detail-outcome">{{ outcomeText }} · …</span>`。
+  - （仅改 class 名，文本不变；既有测试基于文本/其它 class，不受影响。）
+
+- [ ] **`src/style.css` 修正（在 Task 12 追加块内）**
+  - `.history-actions button` 增 `color: var(--text);`
+  - `.row-main` 增 `color: var(--text);`（修复 `.match` 与结果列继承白色）
+  - `.history-detail .detail-head button` 增 `color: var(--text);`
+  - 新增 `.row-main .row-outcome { color: var(--text); }` 与 `.history-detail .detail-outcome { color: var(--text-muted); font-size: 0.85rem; }`
+  - `.history-page { width: min(680px, 96vw); }` → 改为更高特异性并覆盖 `.app` 约束：
+    ```css
+    .app.history-page {
+      max-width: min(680px, 96vw);
+      flex: 0 1 min(680px, 96vw);
+    }
+    ```
+  - `.saved-hint` 颜色 `#16a34a` → `#15803d`（达到 AA 对比，复用既有绿）
+  - `.name-field input` 增 `letter-spacing: normal; text-align: left;`（覆盖全局 input 的居中+字距）
+  - 新增 `.detail-title { margin: 0 0 12px; font-size: 1.2rem; }`
+
+- [ ] 验证：`npm run test` → 189 全绿；`npm run build` → 成功；并人工/语义确认上述按钮与历史行文字可见。
+- [ ] Commit：
+```bash
+git add src/style.css src/components/HistoryView.vue src/components/HistoryDetail.vue
+git commit -m "style(history): 修复按钮白字白底/.result 类冲突/历史页宽度（采纳代码审查）"
+```
+
 ## Task 13: 文档（L1–L4 + README）
 
 边写代码边填充分层文档。
