@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { feedback } from './engine'
+import { feedback, createGame } from './engine'
 
 describe('feedback', () => {
   it('全部位置正确返回位数', () => {
@@ -29,5 +29,33 @@ describe('feedback', () => {
 
   it('十位数 N=10 全对', () => {
     expect(feedback('0123456789', '0123456789')).toBe(10)
+  })
+})
+
+describe('createGame', () => {
+  it('默认位数为 4', () => {
+    expect(createGame().config.digits).toBe(4)
+  })
+  it('可自定义位数', () => {
+    expect(createGame({ digits: 6 }).config.digits).toBe(6)
+  })
+  it('初始状态正确', () => {
+    const s = createGame()
+    expect(s.phase).toBe('setup')
+    expect(s.current).toBe('p1')
+    expect(s.round).toBe(1)
+    expect(s.secrets).toEqual({ p1: null, p2: null })
+    expect(s.history).toEqual({ p1: [], p2: [] })
+    expect(s.pendingHits).toEqual({ p1: false, p2: false })
+    expect(s.outcome).toEqual({ kind: 'ongoing' })
+  })
+  it('位数为 0 抛错', () => {
+    expect(() => createGame({ digits: 0 })).toThrow()
+  })
+  it('位数为 11 抛错', () => {
+    expect(() => createGame({ digits: 11 })).toThrow()
+  })
+  it('位数非整数抛错', () => {
+    expect(() => createGame({ digits: 3.5 })).toThrow()
   })
 })
