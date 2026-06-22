@@ -30,6 +30,10 @@ describe('feedback', () => {
   it('十位数 N=10 全对', () => {
     expect(feedback('0123456789', '0123456789')).toBe(10)
   })
+
+  it('十位数 N=10 全错（逐位都不同）', () => {
+    expect(feedback('0123456789', '9876543210')).toBe(0)
+  })
 })
 
 describe('createGame', () => {
@@ -57,6 +61,17 @@ describe('createGame', () => {
   })
   it('位数非整数抛错', () => {
     expect(() => createGame({ digits: 3.5 })).toThrow()
+  })
+  it('错误消息包含 1 到 10', () => {
+    expect(() => createGame({ digits: 0 })).toThrow(/1 到 10/)
+  })
+  it('拒绝 NaN 与 Infinity', () => {
+    expect(() => createGame({ digits: NaN })).toThrow()
+    expect(() => createGame({ digits: Infinity })).toThrow()
+  })
+  it('接受边界位数 1 与 10', () => {
+    expect(createGame({ digits: 1 }).config.digits).toBe(1)
+    expect(createGame({ digits: 10 }).config.digits).toBe(10)
   })
 })
 
@@ -94,6 +109,16 @@ describe('setSecret', () => {
     const s0 = createGame()
     setSecret(s0, 'p1', '1234')
     expect(s0.secrets.p1).toBeNull()
+  })
+  it('返回新对象（引用不同）', () => {
+    const s0 = createGame()
+    const s = setSecret(s0, 'p1', '1234')
+    expect(s).not.toBe(s0)
+  })
+  it('参数化位数：digits=6 接受 6 位秘密数', () => {
+    let s = createGame({ digits: 6 })
+    s = setSecret(s, 'p1', '012345')
+    expect(s.secrets.p1).toBe('012345')
   })
 })
 
@@ -145,6 +170,8 @@ describe('submitGuess', () => {
     s = submitGuess(s, '1234') // P2 猜中 P1 的数 → 回合末
     expect(s.phase).toBe('over')
     expect(s.outcome).toEqual({ kind: 'win', winner: 'p2' })
+    expect(s.history.p1).toHaveLength(1)
+    expect(s.history.p2).toHaveLength(1)
   })
 
   it('双方同回合都猜中 → 平局', () => {
@@ -153,6 +180,8 @@ describe('submitGuess', () => {
     s = submitGuess(s, '1234') // P2 也中 → 回合末
     expect(s.phase).toBe('over')
     expect(s.outcome).toEqual({ kind: 'draw' })
+    expect(s.history.p1).toHaveLength(1)
+    expect(s.history.p2).toHaveLength(1)
   })
 
   it('历史跨回合正确累积', () => {
@@ -178,5 +207,10 @@ describe('submitGuess', () => {
     submitGuess(s0, '5678')
     expect(s0.history.p1).toHaveLength(0)
     expect(s0.current).toBe('p1')
+  })
+
+  it('返回新对象（引用不同）', () => {
+    const s0 = startPlaying()
+    expect(submitGuess(s0, '5678')).not.toBe(s0)
   })
 })

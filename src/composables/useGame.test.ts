@@ -36,4 +36,20 @@ describe('useGame', () => {
   it('支持自定义位数', () => {
     expect(useGame({ digits: 5 }).config.value.digits).toBe(5)
   })
+  it('reset 改位数后校验随之变化', () => {
+    const g = useGame()
+    g.reset({ digits: 6 })
+    expect(g.config.value.digits).toBe(6)
+    expect(g.checkGuess('1234')).toEqual({ ok: false, error: '请输入 6 位数字' })
+    expect(g.checkGuess('001122').ok).toBe(true)
+  })
+  it('平局 outcome：完整一局双中', () => {
+    const g = useGame()
+    g.applySecret('p1', '1234')
+    g.applySecret('p2', '5678')
+    g.applyGuess('5678') // P1 中
+    g.applyGuess('1234') // P2 也中 → 平局
+    expect(g.outcome.value).toEqual({ kind: 'draw' })
+    expect(g.phase.value).toBe('over')
+  })
 })
