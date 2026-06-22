@@ -309,7 +309,7 @@ import { saveGame, listGames, getGame, deleteGame, clearAll } from './store'
 Run: `npx vitest run src/history/store.test.ts`
 Expected: FAIL —— `getGame` / `deleteGame` 不是导出函数（`is not a function`）。
 
-- [ ] **Step 3: 在 `src/history/store.ts` 末尾追加实现**
+- [ ] **Step 3: 在 `src/history/store.ts` 末尾追加实现（含一致的事务中断处理）**
 
 ```typescript
 export async function getGame(id: string): Promise<GameRecord | undefined> {
@@ -319,6 +319,7 @@ export async function getGame(id: string): Promise<GameRecord | undefined> {
     const req = tx.objectStore(STORE).get(id)
     req.onsuccess = () => resolve(req.result as GameRecord | undefined)
     req.onerror = () => reject(req.error ?? new Error('getGame failed'))
+    tx.onabort = () => reject(tx.error ?? new Error('getGame aborted'))
   })
 }
 
@@ -329,9 +330,23 @@ export async function deleteGame(id: string): Promise<void> {
     tx.objectStore(STORE).delete(id)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error ?? new Error('deleteGame failed'))
+    tx.onabort = () => reject(tx.error ?? new Error('deleteGame aborted'))
   })
 }
 ```
+
+- [ ] **Step 3b: 硬化既有 `listGames` / `clearAll` 的事务中断处理（来自 Task 2 代码审查的 Important 建议）**
+
+在 `listGames` 的 `new Promise(...)` 内、`cursorReq.onerror` 之后补：
+```typescript
+    tx.onabort = () => reject(tx.error ?? new Error('listGames aborted'))
+    tx.onerror = () => reject(tx.error ?? new Error('listGames failed'))
+```
+在 `clearAll` 的 `new Promise(...)` 内、`tx.onerror` 之后补：
+```typescript
+    tx.onabort = () => reject(tx.error ?? new Error('clearAll aborted'))
+```
+（目的：所有事务在 abort 路径下都会 reject，避免 Promise 永不 settle；与 `saveGame` 的处理保持一致。`fake-indexeddb` 难以触发 abort，故不新增专门测试，但既有 9 个用例须仍全绿。）
 
 - [ ] **Step 4: 运行测试，确认通过**
 
