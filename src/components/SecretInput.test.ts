@@ -55,4 +55,12 @@ describe('SecretInput', () => {
     await w.find('button.toggle').trigger('click')
     expect(input.attributes('type')).toBe('text')
   })
+
+  it('连续输入时第二次非法字符也被擦除（ref 未变化的回归场景）', async () => {
+    const w = mount(SecretInput, { props: { digits: 4, label: '设置', validate: len4 } })
+    const input = w.find('input')
+    await input.setValue('12')
+    await input.setValue('12a') // 清理后为 '12'，等于当前 ref，不会触发响应式 patch
+    expect((input.element as HTMLInputElement).value).toBe('12')
+  })
 })
