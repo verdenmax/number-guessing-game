@@ -1677,6 +1677,72 @@ git add src/App.vue src/App.test.ts src/App.recording.test.ts
 git commit -m "feat(history): App 整合录入历史 + 历史视图切换"
 ```
 
+- [ ] **Step 7: 补详情路径 App 级集成测试（采纳 Task 11 代码审查 M3）**
+
+App 级目前只测了列表 open+back；补详情 open→back 与 open→delete→回列表的端到端接线。追加到 `src/App.recording.test.ts`。
+
+先在该文件顶部 import 增加：
+```typescript
+import HistoryView from './components/HistoryView.vue'
+import HistoryDetail from './components/HistoryDetail.vue'
+import type { GameRecord } from './history/types'
+```
+在 `describe('App 录入历史', ...)` 内追加（与录入用例共用 mock store）：
+```typescript
+  const sampleRecord: GameRecord = {
+    id: 'r1',
+    playedAt: 1,
+    digits: 4,
+    names: { p1: null, p2: null },
+    secrets: { p1: '0123', p2: '4567' },
+    history: { p1: [], p2: [] },
+    outcome: { kind: 'draw' },
+    rounds: 1,
+  }
+
+  it('历史详情：打开记录 → 返回 → 回到列表', async () => {
+    mockStore.listGames.mockResolvedValue([sampleRecord])
+    const w = mount(App)
+    await w.find('.nav-history').trigger('click')
+    await flushPromises()
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+
+    w.findComponent(HistoryView).vm.$emit('open', sampleRecord)
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(true)
+    expect(w.findComponent(HistoryView).exists()).toBe(false)
+
+    w.findComponent(HistoryDetail).vm.$emit('back')
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(false)
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+  })
+
+  it('历史详情：删除 → 调用 deleteGame 并回到列表', async () => {
+    mockStore.listGames.mockResolvedValue([sampleRecord])
+    mockStore.deleteGame.mockResolvedValue(undefined)
+    const w = mount(App)
+    await w.find('.nav-history').trigger('click')
+    await flushPromises()
+    w.findComponent(HistoryView).vm.$emit('open', sampleRecord)
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(true)
+
+    w.findComponent(HistoryDetail).vm.$emit('delete', 'r1')
+    await flushPromises()
+    expect(mockStore.deleteGame).toHaveBeenCalledWith('r1')
+    expect(w.findComponent(HistoryDetail).exists()).toBe(false)
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+  })
+```
+
+- [ ] 运行 `npx vitest run src/App.recording.test.ts` → 6 通过（原 4 + 新 2）；`npx vitest run` → 189；`npx vue-tsc --noEmit` → 0。
+- [ ] Commit：
+```bash
+git add src/App.recording.test.ts
+git commit -m "test(history): App 级补历史详情 open/back/delete 集成测试"
+```
+
 ## Task 12: 样式（style.css）
 
 纯视觉，无逻辑。复用现有 CSS 变量（`--card`/`--border`/`--radius`/`--accent`/`--text-muted`/`--danger` 等）。
