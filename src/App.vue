@@ -1,15 +1,59 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useGame } from './composables/useGame'
+import { useHistory } from './composables/useHistory'
+import { buildGameRecord } from './history/record'
+import { saveGame } from './history/store'
+import type { PlayerId } from './game/types'
+import type { GameRecord } from './history/types'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
 import SolverPanel from './components/SolverPanel.vue'
+import HistoryView from './components/HistoryView.vue'
+import HistoryDetail from './components/HistoryDetail.vue'
 
 const {
   phase, current, outcome, config, state,
   applySecret, applyGuess, checkSecret, checkGuess, reset,
 } = useGame()
+
+const names = ref<{ p1: string | null; p2: string | null }>({ p1: null, p2: null })
+const applyName = (p: PlayerId, n: string) => {
+  names.value[p] = n.trim() || null
+}
+
+const saved = ref(false)
+const saveError = ref<string | null>(null)
+
+watch(phase, async (p) => {
+  if (p === 'over' && !saved.value) {
+    saved.value = true
+    saveError.value = null
+    try {
+      await saveGame(buildGameRecord(state.value, names.value))
+    } catch {
+      saveError.value = '历史保存失败（可能是浏览器隐私模式）'
+    }
+  }
+})
+
+function playAgain() {
+  reset()
+  names.value = { p1: null, p2: null }
+  saved.value = false
+  saveError.value = null
+}
+
+const view = ref<'game' | 'history'>('game')
+const detail = ref<GameRecord | null>(null)
+const { records, error: historyError, load, remove, clear } = useHistory()
+
+async function openHistory() {
+  detail.value = null
+  view.value = 'history'
+  await load()
+}
 
 const activeSide = computed(() => {
   if (phase.value === 'playing') return current.value === 'p1' ? 'red' : 'blue'
@@ -21,49 +65,83 @@ const activeSide = computed(() => {
 <template>
   <div class="stage" :class="`side-${activeSide}`">
     <div class="table">
-      <SolverPanel
-        v-if="phase === 'playing'"
-        class="solver-left"
-        :digits="config.digits"
-        :guesses="state.history.p1"
-        side="red"
-      />
-
-      <main class="app">
-        <h1>Guessing Number</h1>
-
-        <SetupView
-          v-if="phase === 'setup'"
+      <template v-if="view === 'game'">
+        <SolverPanel
+          v-if="phase === 'playing'"
+          class="solver-left"
           :digits="config.digits"
-          :validate="checkSecret"
-          @set-secret="applySecret"
+          :guesses="state.history.p1"
+          side="red"
         />
 
-        <PlayView
-          v-else-if="phase === 'playing'"
-          :digits="config.digits"
-          :current="current"
-          :validate="checkGuess"
-          :history="state.history"
-          @guess="applyGuess"
-        />
+        <main class="app">
+          <header class="app-head">
+            <h1>Guessing Number</h1>
+            <button
+              v-if="phase !== 'playing'"
+              type="button"
+              class="nav-history"
+              @click="openHistory"
+            >
+              📜 历史
+            </button>
+          </header>
 
-        <ResultView
+          <SetupView
+            v-if="phase === 'setup'"
+            :digits="config.digits"
+            :validate="checkSecret"
+            @set-secret="applySecret"
+            @set-name="applyName"
+          />
+
+          <PlayView
+            v-else-if="phase === 'playing'"
+            :digits="config.digits"
+            :current="current"
+            :validate="checkGuess"
+            :history="state.history"
+            @guess="applyGuess"
+          />
+
+          <ResultView
+            v-else
+            :outcome="outcome"
+            :secrets="state.secrets"
+            :history="state.history"
+            :names="names"
+            :save-error="saveError"
+            @play-again="playAgain"
+            @view-history="openHistory"
+          />
+        </main>
+
+        <SolverPanel
+          v-if="phase === 'playing'"
+          class="solver-right"
+          :digits="config.digits"
+          :guesses="state.history.p2"
+          side="blue"
+        />
+      </template>
+
+      <main v-else class="app history-page">
+        <HistoryDetail
+          v-if="detail"
+          :record="detail"
+          @back="detail = null"
+          @delete="async (id) => { await remove(id); detail = null }"
+        />
+        <HistoryView
           v-else
-          :outcome="outcome"
-          :secrets="state.secrets"
-          :history="state.history"
-          @play-again="reset()"
+          :records="records"
+          :error="historyError"
+          @open="detail = $event"
+          @remove="remove"
+          @clear="clear"
+          @back="view = 'game'"
         />
       </main>
-
-      <SolverPanel
-        v-if="phase === 'playing'"
-        class="solver-right"
-        :digits="config.digits"
-        :guesses="state.history.p2"
-        side="blue"
-      />
     </div>
   </div>
 </template>
