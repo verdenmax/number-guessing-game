@@ -1347,6 +1347,55 @@ git add src/composables/useHistory.ts src/composables/useHistory.test.ts
 git commit -m "feat(history): useHistory remove/clear 写失败降级到 error"
 ```
 
+## Task 10c: HistoryView 错误改为非互斥横幅（采纳 Task 10b 审查）
+
+Task 10b 后写失败会置 `error`，但 HistoryView 当前 `v-if="error"` 与列表互斥——写失败会隐藏仍有效的列表。改为：错误作为顶部横幅常驻，列表/空态独立渲染（records 有则显示列表；无 records 且无 error 才显示空态）。
+
+**Files:**
+- Modify: `src/components/HistoryView.vue`
+- Test: `src/components/HistoryView.test.ts`（追加 1 用例）
+
+- [ ] **Step 1: 追加失败测试到 `src/components/HistoryView.test.ts`**
+在 `describe` 内追加：
+```typescript
+  it('有 error 但仍有 records 时，列表仍显示（错误作为横幅）', () => {
+    const w = mount(HistoryView, { props: { records: [rec({ id: 'x' })], error: '历史删除失败' } })
+    expect(w.text()).toContain('历史删除失败')
+    expect(w.find('.history-list').exists()).toBe(true)
+  })
+```
+
+- [ ] **Step 2: 运行测试，确认失败**
+Run: `npx vitest run src/components/HistoryView.test.ts`
+Expected: FAIL —— 当前 `v-if="error"` 让列表被 `v-else` 排除，`.history-list` 不存在。
+
+- [ ] **Step 3: 修改 `src/components/HistoryView.vue` 模板的渲染分支**
+把：
+```html
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <p v-else-if="records.length === 0" class="empty">还没有历史记录，玩一局试试吧</p>
+
+    <ul v-else class="history-list">
+```
+改为（错误横幅独立；列表按 records 显示；空态仅在无 records 且无 error 时）：
+```html
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <p v-if="records.length === 0 && !error" class="empty">还没有历史记录，玩一局试试吧</p>
+
+    <ul v-if="records.length" class="history-list">
+```
+（`</ul>` 等其余结构不变。注意把原 `v-else` 改为 `v-if="records.length"`，空态条件改为 `records.length === 0 && !error`。）
+
+- [ ] **Step 4: 运行测试，确认通过**
+Run: `npx vitest run src/components/HistoryView.test.ts`
+Expected: PASS（原 11 + 新 1 = 12）。既有 “error 时显示错误信息”（records=[]）仍绿：横幅显示，列表不渲染，空态因 `!error` 不渲染。
+
+- [ ] **Step 5: Commit**
+```bash
+git add src/components/HistoryView.vue src/components/HistoryView.test.ts
+git commit -m "feat(history): HistoryView 错误改为非互斥横幅，列表照常显示"
+```
+
 ## Task 11: App 整合（录入 + 视图切换）
 
 整文件重写 `App.vue`：提升 `names`、`watch(phase)` 自动保存、`view` 切换、挂 HistoryView/HistoryDetail、历史入口按钮。录入逻辑用独立测试文件（mock store）验证；视图切换在 `App.test.ts` 验证。
