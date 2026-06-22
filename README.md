@@ -1,5 +1,7 @@
 # 双人猜数字（热座版）· Number Guessing Game
 
+🎮 **在线试玩**：<https://verdenmax.github.io/number-guessing-game/>
+
 > 两名玩家（**红方 / 蓝方**）在**同一台电脑**上轮流玩的猜数字小游戏：各自秘密设置一个 N 位（默认 4 位）、每位互不相同的数字，再轮流互猜。每次只得到一个 **正确数目**提示（有几位完全正确，即 Bulls），**先在一个完整回合内全部猜中者胜，同回合双方都中则平局。** 猜测阶段两侧各有一个**推理助手**辅助排除。
 
 ## 玩法（3 步）
@@ -52,7 +54,7 @@ npm run build    # vue-tsc 类型检查 + 生产构建到 dist/
 
 ## 部署（GitHub Pages）
 
-推送到 `main` 即由 **GitHub Actions** 自动构建并部署到 GitHub Pages：`npm ci → build → test → upload dist → deploy`。
+推送到 `main` 即由 **GitHub Actions** 自动构建并部署到 GitHub Pages：`npm ci → build → test → upload dist → deploy`。线上地址：<https://verdenmax.github.io/number-guessing-game/>。
 
 > ⚠️ **首次需手动一次**：仓库 **Settings → Pages → Source → 选「GitHub Actions」**（`GITHUB_TOKEN` 无权自动建站，只能部署）。之后无需再干预。
 
