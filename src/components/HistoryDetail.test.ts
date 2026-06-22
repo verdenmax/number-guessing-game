@@ -57,4 +57,11 @@ describe('HistoryDetail', () => {
     await w.find('.detail-del').trigger('click')
     expect(w.emitted('delete')![0]).toEqual(['z'])
   })
+
+  it('取消删除时不 emit delete', async () => {
+    vi.stubGlobal('confirm', () => false)
+    const w = mount(HistoryDetail, { props: { record: rec({ id: 'z' }) } })
+    await w.find('.detail-del').trigger('click')
+    expect(w.emitted('delete')).toBeUndefined()
+  })
 })

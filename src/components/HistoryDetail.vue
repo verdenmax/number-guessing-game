@@ -25,6 +25,7 @@ function confirmDelete() {
 
 <template>
   <div class="history-detail">
+    <h2 class="detail-title">对局详情</h2>
     <header class="detail-head">
       <button type="button" @click="emit('back')">← 列表</button>
       <span class="when">{{ fmtTime }}</span>
