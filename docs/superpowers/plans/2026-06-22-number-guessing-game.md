@@ -1039,7 +1039,7 @@ import type { PlayerId, ValidationResult } from '../game/types'
 import SecretInput from './SecretInput.vue'
 import HandoffScreen from './HandoffScreen.vue'
 
-const props = defineProps<{
+defineProps<{
   digits: number
   validate: (value: string) => ValidationResult
 }>()
@@ -1158,8 +1158,10 @@ const emit = defineEmits<{ confirm: [value: string] }>()
 const value = ref('')
 
 function onInput(e: Event) {
-  const raw = (e.target as HTMLInputElement).value
-  value.value = raw.replace(/[^0-9]/g, '').slice(0, props.digits)
+  const el = e.target as HTMLInputElement
+  const clean = el.value.replace(/[^0-9]/g, '').slice(0, props.digits)
+  value.value = clean
+  el.value = clean
 }
 
 const result = computed(() => props.validate(value.value))

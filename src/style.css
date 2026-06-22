@@ -1,0 +1,566 @@
+:root {
+  --bg: #f4f5fb;
+  --bg-gradient: linear-gradient(160deg, #f4f5fb 0%, #eceefb 100%);
+  --card: #ffffff;
+  --text: #1f2330;
+  --text-muted: #6b7280;
+  --primary: #5b5bd6;
+  --primary-hover: #4848c4;
+  --primary-soft: #ececfb;
+  --red: #dc2626;
+  --red-soft: #fdeaea;
+  --red-hover: #b91c1c;
+  --blue: #2563eb;
+  --blue-soft: #e8f0fe;
+  --blue-hover: #1d4ed8;
+  --accent: #5b5bd6;
+  --accent-soft: #ececfb;
+  --accent-hover: #4848c4;
+  --danger: #dc2626;
+  --border: #e5e7eb;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 10px 30px rgba(20, 20, 50, 0.08);
+  --space: 8px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", "JetBrains Mono", "Fira Code", "Roboto Mono", ui-monospace,
+    Menlo, Consolas, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  width: 100%;
+}
+
+/* ---------- Stage: full-page colored backdrop by current side ---------- */
+.stage {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg-gradient);
+  transition: background 0.5s ease;
+}
+
+.stage.side-red {
+  --accent: var(--red);
+  --accent-soft: var(--red-soft);
+  --accent-hover: var(--red-hover);
+  background: linear-gradient(160deg, #fdecec 0%, #fbdada 100%);
+}
+
+.stage.side-blue {
+  --accent: var(--blue);
+  --accent-soft: var(--blue-soft);
+  --accent-hover: var(--blue-hover);
+  background: linear-gradient(160deg, #eaf1fe 0%, #d7e4fd 100%);
+}
+
+.stage.side-neutral {
+  background: var(--bg-gradient);
+}
+
+/* ---------- App card ---------- */
+.app {
+  width: 100%;
+  max-width: 460px;
+  background: var(--card);
+  border-top: 5px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: border-color 0.4s ease;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app > h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+/* ---------- Text helpers ---------- */
+.label {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+
+.error {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.82rem;
+  color: var(--danger);
+  text-align: center;
+}
+
+.turn {
+  margin: 0;
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Inputs ---------- */
+.secret-input,
+.guess-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+input {
+  flex: 1;
+  width: 100%;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--text);
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+  letter-spacing: normal;
+}
+
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* ---------- Buttons ---------- */
+button {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 18px;
+  background: var(--accent);
+  color: #fff;
+  transition: background-color 0.18s ease, transform 0.06s ease, box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+
+button:hover {
+  background: var(--accent-hover);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  background: #c7c9d6;
+  color: #f3f4f8;
+  cursor: not-allowed;
+}
+
+.confirm {
+  width: 100%;
+}
+
+/* Secondary button: 显示/隐藏 toggle */
+.toggle {
+  flex: 0 0 auto;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.9rem;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+}
+
+.toggle:hover {
+  background: #e0e0fa;
+}
+
+/* ---------- Handoff screen ---------- */
+.handoff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+  padding: 28px 20px;
+  background: var(--accent-soft);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+}
+
+.handoff .message {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.handoff button {
+  width: 100%;
+  max-width: 280px;
+  padding: 16px 18px;
+  font-size: 1.05rem;
+}
+
+/* ---------- Play view ---------- */
+.play {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- History ---------- */
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.history ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fafafe;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.history .guess {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--text);
+}
+
+.history .fb {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.history .empty {
+  margin: 0;
+  padding: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* History red/blue theming by side */
+.history.side-red h3 {
+  color: var(--red);
+}
+
+.history.side-red .fb {
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+.history.side-blue h3 {
+  color: var(--blue);
+}
+
+.history.side-blue .fb {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+/* ---------- Result view ---------- */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.result h2 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+}
+
+.result .reveal {
+  margin: 0;
+  padding: 14px 16px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  background: var(--primary-soft);
+  border-radius: var(--radius-sm);
+}
+
+.histories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.histories > .history {
+  flex: 1 1 180px;
+  min-width: 180px;
+}
+
+.result > button {
+  width: 100%;
+  padding: 15px 18px;
+  font-size: 1.05rem;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+  }
+
+  .app {
+    padding: 22px 18px;
+    border-radius: 12px;
+  }
+
+  .app > h1 {
+    font-size: 1.5rem;
+  }
+
+  .histories {
+    flex-direction: column;
+  }
+
+  .histories > .history {
+    min-width: 0;
+  }
+}
+
+/* ---------- Table: 三栏布局（playing 阶段） ---------- */
+.table {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.table > .app {
+  flex: 0 1 460px;
+}
+
+/* ---------- Solver panel ---------- */
+.solver {
+  flex: 0 1 auto;
+  min-width: 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  align-self: stretch;
+}
+
+.solver.side-red {
+  --accent: var(--red);
+  --accent-soft: var(--red-soft);
+  --accent-hover: var(--red-hover);
+  border-top: 5px solid var(--red);
+}
+
+.solver.side-blue {
+  --accent: var(--blue);
+  --accent-soft: var(--blue-soft);
+  --accent-hover: var(--blue-hover);
+  border-top: 5px solid var(--blue);
+}
+
+.solver-toggle {
+  width: 100%;
+  border-radius: 0;
+  text-align: left;
+  background: var(--card);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.solver.side-red .solver-toggle {
+  color: var(--red);
+}
+
+.solver.side-blue .solver-toggle {
+  color: var(--blue);
+}
+
+.solver-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.solver-grid {
+  display: grid;
+  gap: 4px;
+}
+
+.solver-col-head {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding-bottom: 2px;
+}
+
+.solver-cell {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 6px 0;
+  border-radius: 8px;
+  background: #f3f4fb;
+  color: var(--text);
+  border: 1.5px solid transparent;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+/* 格子状态配色 */
+.solver-cell.available {
+  background: #f3f4fb;
+  color: var(--text);
+}
+
+.solver-cell.eliminated {
+  background: #f3f4f6;
+  color: #c2c5cc;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.solver-cell.fixed {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #4ade80;
+}
+
+.solver-cell.assumed {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.solver-cell.conflict {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #ef4444;
+  border-style: dashed;
+}
+
+.solver-reset {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.85rem;
+  padding: 8px 12px;
+}
+
+.solver-toggle:hover {
+  background: var(--accent-soft);
+}
+
+.solver-reset:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------- 展示优化 ---------- */
+.history .guess {
+  word-spacing: 0.15em;
+}
+
+@media (max-width: 920px) {
+  .table {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .table > .app {
+    order: -1;
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .solver {
+    width: 100%;
+    max-width: 460px;
+  }
+}

@@ -1,0 +1,54 @@
+import { describe, it, expect } from 'vitest'
+import { mount } from '@vue/test-utils'
+import PlayView from './PlayView.vue'
+import GuessInput from './GuessInput.vue'
+import HistoryList from './HistoryList.vue'
+import type { GuessRecord, ValidationResult } from '../game/types'
+
+const okValidate = (): ValidationResult => ({ ok: true })
+const baseProps = {
+  digits: 4,
+  current: 'p1' as const,
+  validate: okValidate,
+  history: {
+    p1: [{ guess: '1234', feedback: 1 }] as GuessRecord[],
+    p2: [] as GuessRecord[],
+  },
+}
+
+describe('PlayView', () => {
+  it('直接显示猜测输入，无交接屏', () => {
+    const w = mount(PlayView, { props: baseProps })
+    expect(w.findComponent(GuessInput).exists()).toBe(true)
+  })
+
+  it('常驻显示红、蓝两个历史列表', () => {
+    const w = mount(PlayView, { props: baseProps })
+    const lists = w.findAllComponents(HistoryList)
+    expect(lists).toHaveLength(2)
+    expect(lists[0].props('title')).toBe('红方')
+    expect(lists[1].props('title')).toBe('蓝方')
+  })
+
+  it('红方回合：GuessInput 的 label 含红方', () => {
+    const w = mount(PlayView, { props: baseProps })
+    expect(w.findComponent(GuessInput).props('label')).toContain('红方')
+  })
+
+  it('蓝方回合：GuessInput 的 label 含蓝方', () => {
+    const w = mount(PlayView, { props: { ...baseProps, current: 'p2' as const } })
+    expect(w.findComponent(GuessInput).props('label')).toContain('蓝方')
+  })
+
+  it('提交猜测后 emit guess', async () => {
+    const w = mount(PlayView, { props: baseProps })
+    w.findComponent(GuessInput).vm.$emit('confirm', '5678')
+    await w.vm.$nextTick()
+    expect(w.emitted('guess')).toEqual([['5678']])
+  })
+
+  it('显示双方已有猜测记录', () => {
+    const w = mount(PlayView, { props: baseProps })
+    expect(w.text()).toContain('1234')
+  })
+})
