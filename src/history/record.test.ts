@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildGameRecord, newId } from './record'
 import { createGame, setSecret, submitGuess } from '../game/engine'
+import { useGame } from '../composables/useGame'
 import type { GameState } from '../game/types'
 
 // 构造一局已结束的对局：p1 猜中 p2 秘密(4 bulls)，p2 没中(0 bulls) → p1 胜
@@ -71,5 +72,22 @@ describe('buildGameRecord', () => {
     const r = buildGameRecord(s, { p1: null, p2: null }, { id: 'm', now: 1 })
     expect(r.rounds).toBe(2)
     expect(r.outcome).toEqual({ kind: 'win', winner: 'p1' })
+  })
+
+  // 回归：真实游戏经 useGame(ref) 后 state 为 Vue 响应式 Proxy；
+  // 记录若残留 Proxy（如 outcome 直接引用），IndexedDB put 的结构化克隆会抛 DataCloneError。
+  it('从响应式 state 组装的记录可被结构化克隆（IndexedDB 持久化前提）', () => {
+    const g = useGame({ digits: 4 })
+    g.applySecret('p1', '0123')
+    g.applySecret('p2', '4567') // → playing
+    g.applyGuess('4567') // p1 命中 p2
+    g.applyGuess('9999') // p2 未中 → over
+    expect(g.phase.value).toBe('over')
+
+    const rec = buildGameRecord(g.state.value, { p1: 'Alice', p2: null }, { id: 'x', now: 1 })
+    // structuredClone 会在遇到 Vue Proxy 时抛 DataCloneError —— 等价于 IDBObjectStore.put 的行为
+    expect(() => structuredClone(rec)).not.toThrow()
+    // 克隆后内容仍正确（确认不是靠丢字段绕过）
+    expect(structuredClone(rec)).toEqual(rec)
   })
 })

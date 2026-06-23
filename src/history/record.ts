@@ -1,4 +1,4 @@
-import type { GameState } from '../game/types'
+import type { GameState, Outcome } from '../game/types'
 import type { GameRecord } from './types'
 
 export interface RecordNames {
@@ -25,6 +25,15 @@ export function buildGameRecord(
   if (p1 === null || p2 === null) {
     throw new Error('over 阶段双方秘密数不应为 null')
   }
+  // 重建为普通对象：state 经 useGame 的 ref 后是 Vue 响应式 Proxy，
+  // 直接引用 state.outcome 会让记录残留 Proxy，导致 IndexedDB put 的结构化克隆抛 DataCloneError。
+  const o = state.outcome
+  const outcome: Outcome =
+    o.kind === 'win'
+      ? { kind: 'win', winner: o.winner }
+      : o.kind === 'draw'
+        ? { kind: 'draw' }
+        : { kind: 'ongoing' }
   return {
     id: opts.id ?? newId(),
     playedAt: opts.now ?? Date.now(),
@@ -35,7 +44,7 @@ export function buildGameRecord(
       p1: state.history.p1.map((r) => ({ ...r })),
       p2: state.history.p2.map((r) => ({ ...r })),
     },
-    outcome: state.outcome,
+    outcome,
     rounds: state.round,
   }
 }
