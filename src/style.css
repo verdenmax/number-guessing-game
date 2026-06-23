@@ -472,6 +472,7 @@ button:disabled {
 .solver-grid {
   display: grid;
   gap: 4px;
+  position: relative;
 }
 
 .solver-col-head {
@@ -508,7 +509,7 @@ button:disabled {
   opacity: 0.7;
 }
 
-/* 手动划除（右键/Shift+点击/Delete）：你的"假设错误"标记。
+/* 手动划除（点击格子→菜单「划除」）：你的"假设错误"标记。
    琥珀色 + 虚线边框 + 不变暗，靠颜色与形状双重区分于灰暗的事实排除 eliminated。 */
 .solver-cell.crossed {
   background: #fff7ed;
@@ -523,6 +524,24 @@ button:disabled {
   background: #dcfce7;
   color: #15803d;
   border-color: #4ade80;
+}
+
+/* 假设下确定：仅在当前假设/划除下唯一。绿底 + 虚线 + 角标 *，与实心「事实确定」区分（形状/标记双重线索）。 */
+.solver-cell.fixedAssumed {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #4ade80;
+  border-style: dashed;
+  position: relative;
+}
+.solver-cell.fixedAssumed::after {
+  content: '*';
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  line-height: 1;
+  color: #15803d;
 }
 
 .solver-cell.assumed {
@@ -872,4 +891,51 @@ button:disabled {
     grid-template-columns: 1fr auto;
     row-gap: 4px;
   }
+}
+
+.solver-count {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+/* 层级：背板在格子之下(z5)，格子在背板之上(z10) → 菜单开着时点「别的格子」命中格子(切换锚点)而非背板；
+   点格子以外(面板/页面)命中背板 → 关闭。菜单(z20)在最上。 */
+.solver-cell {
+  position: relative;
+  z-index: 10;
+}
+.solver-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+}
+.solver-menu {
+  position: absolute;
+  z-index: 20;
+  min-width: 104px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+.solver-menu-item {
+  flex: none;
+  width: 100%;
+  padding: 9px 14px;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.solver-menu-item:hover:not(:disabled) {
+  background: var(--accent-soft, #ececfb);
+}
+.solver-menu-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
