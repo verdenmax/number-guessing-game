@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import type { GuessRecord } from '../game/types'
 import { solve, basicSolve, remainingCount, type CellState } from '../game/solver'
+import { useInteractionMode } from '../composables/useInteractionMode'
 
 const props = defineProps<{
   digits: number
@@ -14,6 +15,15 @@ const showHelp = ref(false)
 const smartMode = ref(true)
 const assumptions = ref<(number | null)[]>(Array.from({ length: props.digits }, () => null))
 const crossedOut = ref<Set<string>>(new Set())
+
+const mode = useInteractionMode()
+const isGesture = computed(() => mode.value === 'gesture')
+const gestureChecked = computed({
+  get: () => mode.value === 'gesture',
+  set: (v: boolean) => {
+    mode.value = v ? 'gesture' : 'menu'
+  },
+})
 
 const grid = computed(() =>
   (smartMode.value ? solve : basicSolve)({
@@ -124,6 +134,46 @@ function chooseClear() {
   closeMenu()
 }
 
+function toggleAssumption(pos: number, digit: number) {
+  const next = assumptions.value.slice()
+  next[pos] = next[pos] === digit ? null : digit
+  assumptions.value = next
+}
+
+function toggleCrossOut(pos: number, digit: number) {
+  const next = new Set(crossedOut.value)
+  const key = `${pos}-${digit}`
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  crossedOut.value = next
+}
+
+function onCellClick(e: MouseEvent, pos: number, digit: number) {
+  if (isGesture.value) {
+    if (e.shiftKey) toggleCrossOut(pos, digit)
+    else toggleAssumption(pos, digit)
+  } else {
+    openMenu(e, pos, digit)
+  }
+}
+
+function onCellContext(e: MouseEvent, pos: number, digit: number) {
+  if (isGesture.value) toggleCrossOut(pos, digit)
+  else openMenu(e, pos, digit)
+}
+
+function onCellDelete(pos: number, digit: number) {
+  if (isGesture.value) toggleCrossOut(pos, digit)
+}
+
+// 切到快捷模式时，软关闭任何打开的菜单（不抢焦点）
+watch(mode, (m) => {
+  if (m === 'gesture' && menuFor.value) {
+    menuFor.value = null
+    triggerEl = null
+  }
+})
+
 function reset() {
   assumptions.value = Array.from({ length: props.digits }, () => null)
   crossedOut.value = new Set()
@@ -176,7 +226,9 @@ function reset() {
           </li>
           <li><span class="solver-cell conflict">5</span><span>矛盾：假设互相冲突，无解</span></li>
         </ul>
-        <p class="legend-ops">点击格子打开菜单：假设此位／划除／清除 · 「重置假设」清空全部</p>
+        <p class="legend-ops">
+          {{ isGesture ? '左键＝假设此位 · 右键／Shift+左键／Delete＝划除 · 再点取消 · 「重置假设」清空全部' : '点击格子打开菜单：假设此位／划除／清除 · 「重置假设」清空全部' }}
+        </p>
       </div>
       <p v-if="meta" class="solver-count">
         剩 {{ meta.remaining }} 个可能<span v-if="meta.candidates.length">：{{ meta.candidates.join('、') }}</span>
@@ -190,12 +242,13 @@ function reset() {
             type="button"
             class="solver-cell"
             :class="grid[pos - 1][digit - 1]"
-            :aria-label="`位${pos} 数字${digit - 1} ${stateLabel[grid[pos - 1][digit - 1]]}`"
+            :aria-label="`位${pos} 数字${digit - 1} ${stateLabel[grid[pos - 1][digit - 1]]}${isGesture ? '（左键假设/右键划除）' : ''}`"
             :aria-pressed="grid[pos - 1][digit - 1] === 'assumed'"
-            aria-haspopup="menu"
-            :aria-expanded="isMenuOpen(pos - 1, digit - 1)"
-            @click="openMenu($event, pos - 1, digit - 1)"
-            @contextmenu.prevent="openMenu($event, pos - 1, digit - 1)"
+            :aria-haspopup="isGesture ? undefined : 'menu'"
+            :aria-expanded="isGesture ? undefined : isMenuOpen(pos - 1, digit - 1)"
+            @click="onCellClick($event, pos - 1, digit - 1)"
+            @contextmenu.prevent="onCellContext($event, pos - 1, digit - 1)"
+            @keydown.delete.prevent="onCellDelete(pos - 1, digit - 1)"
           >
             {{ digit - 1 }}
           </button>
@@ -228,7 +281,13 @@ function reset() {
           </button>
         </div>
       </div>
-      <button type="button" class="solver-reset" @click="reset">重置假设</button>
+      <div class="solver-footer">
+        <label class="solver-imode">
+          <input type="checkbox" v-model="gestureChecked" />
+          <span aria-hidden="true">🖱</span> 右键快捷
+        </label>
+        <button type="button" class="solver-reset" @click="reset">重置假设</button>
+      </div>
     </div>
   </aside>
 </template>
