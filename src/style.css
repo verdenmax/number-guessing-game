@@ -600,14 +600,17 @@ button:disabled {
 
 /* ---------- 顶部标题栏 + 历史入口 ---------- */
 .app-head {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  gap: 8px;
+}
+.app-head h1 {
+  grid-column: 2;
 }
 .nav-history {
-  position: absolute;
-  right: 0;
+  grid-column: 3;
+  justify-self: end;
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
@@ -615,6 +618,7 @@ button:disabled {
   padding: 6px 10px;
   cursor: pointer;
   font-size: 0.85rem;
+  white-space: nowrap;
 }
 .nav-history:hover {
   border-color: var(--accent);
