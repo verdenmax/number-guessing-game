@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, useId } from 'vue'
 import type { ValidationResult } from '../game/types'
 
 const props = defineProps<{
@@ -12,6 +12,7 @@ const emit = defineEmits<{ confirm: [value: string] }>()
 const value = ref('')
 const masked = ref(true)
 const inputEl = ref<HTMLInputElement | null>(null)
+const id = useId()
 onMounted(() => inputEl.value?.focus())
 
 function onInput(e: Event) {
@@ -33,24 +34,24 @@ function confirm() {
 </script>
 
 <template>
-  <div class="secret-input">
-    <p class="label">{{ label }}</p>
+  <form class="secret-input" @submit.prevent="confirm">
+    <label class="label" :for="id">{{ label }}</label>
     <div class="row">
       <input
+        :id="id"
         ref="inputEl"
         :type="masked ? 'password' : 'text'"
         :value="value"
         inputmode="numeric"
+        autocomplete="off"
         :maxlength="digits"
-        :aria-label="label"
         @input="onInput"
-        @keyup.enter="confirm"
       />
       <button type="button" class="toggle" @click="masked = !masked">
         {{ masked ? '显示' : '隐藏' }}
       </button>
     </div>
     <p v-if="errorText" class="error" role="alert">{{ errorText }}</p>
-    <button type="button" class="confirm" :disabled="!canSubmit" @click="confirm">确认</button>
-  </div>
+    <button type="submit" class="confirm" :disabled="!canSubmit">确认</button>
+  </form>
 </template>

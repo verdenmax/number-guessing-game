@@ -35,7 +35,7 @@ describe('SecretInput', () => {
     const w = mount(SecretInput, { props: { digits: 4, label: '设置', validate: len4 } })
     const input = w.find('input')
     await input.setValue('1234')
-    await w.find('button.confirm').trigger('click')
+    await w.find('form.secret-input').trigger('submit')
     expect(w.emitted('confirm')).toEqual([['1234']])
     expect((input.element as HTMLInputElement).value).toBe('')
   })
@@ -44,7 +44,7 @@ describe('SecretInput', () => {
     const w = mount(SecretInput, { props: { digits: 4, label: '设置', validate: len4 } })
     const input = w.find('input')
     await input.setValue('12')
-    await input.trigger('keyup.enter')
+    await w.find('form.secret-input').trigger('submit')
     expect(w.emitted('confirm')).toBeUndefined()
   })
 
@@ -62,5 +62,13 @@ describe('SecretInput', () => {
     await input.setValue('12')
     await input.setValue('12a') // 清理后为 '12'，等于当前 ref，不会触发响应式 patch
     expect((input.element as HTMLInputElement).value).toBe('12')
+  })
+
+  it('label 与 input 关联（for/id）且无 keyup 手搓提交', () => {
+    const w = mount(SecretInput, { props: { digits: 4, label: '设置秘密', validate: len4 } })
+    const id = w.find('input').attributes('id')
+    expect(id).toBeTruthy()
+    expect(w.find('label.label').attributes('for')).toBe(id)
+    expect(w.find('form.secret-input').exists()).toBe(true)
   })
 })
