@@ -553,6 +553,8 @@ button:disabled {
   position: absolute;
   top: 0;
   right: 4px;
+  font-size: 0.6rem;
+  line-height: 1;
   font-weight: 700;
 }
 
