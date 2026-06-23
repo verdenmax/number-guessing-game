@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { enumerateCandidates, filterByFacts, solve } from './solver'
+import { enumerateCandidates, filterByFacts, solve, basicSolve } from './solver'
 import type { GuessRecord } from './types'
 import type { SolverInput } from './solver'
 
@@ -276,5 +276,54 @@ describe('solve', () => {
     expect(grid[0][9]).toBe('conflict') // 矛盾假设标红
     expect(grid[1][2]).toBe('fixed') // pos1 事实确定是 2，不因矛盾变灰
     expect(grid[0][1]).toBe('fixed') // pos0 事实确定是 1
+  })
+})
+
+describe('basicSolve（基础模式：只排除、不确定）', () => {
+  it('反馈=0 → 该猜测每位数字在对应位置 eliminated', () => {
+    const g = basicSolve(baseInput({ guesses: [{ guess: '0000', feedback: 0 }] }))
+    for (let p = 0; p < 4; p++) expect(g[p][0]).toBe('eliminated')
+    expect(g[0][5]).toBe('available') // 其它数字不受影响
+  })
+
+  it('非反馈0 的猜测不产生事实排除', () => {
+    const g = basicSolve(baseInput({ guesses: [{ guess: '1234', feedback: 1 }] }))
+    expect(g.flat().every((s) => s === 'available')).toBe(true)
+  })
+
+  it('假设格 → 自身 assumed；同行其它位置该数字 + 同列其它数字 eliminated', () => {
+    const g = basicSolve(baseInput({ assumptions: [5, null, null, null] })) // pos0=5
+    expect(g[0][5]).toBe('assumed')
+    expect(g[0][3]).toBe('eliminated') // 同列(pos0)其它数字
+    expect(g[1][5]).toBe('eliminated') // 同行(数字5)其它位置
+    expect(g[2][5]).toBe('eliminated')
+    expect(g[3][5]).toBe('eliminated')
+  })
+
+  it('不自动判 fixed：basic 留 available，而 solve 判 fixed（对比）', () => {
+    const guesses = Array.from({ length: 9 }, (_, d) => ({ guess: `${d}999`, feedback: 0 }))
+    const inp = baseInput({ guesses })
+    expect(basicSolve(inp)[0][9]).toBe('available')
+    expect(solve(inp)[0][9]).toBe('fixed')
+  })
+
+  it('两位假设同一数字 → 两假设格 conflict', () => {
+    const g = basicSolve(baseInput({ assumptions: [5, 5, null, null] }))
+    expect(g[0][5]).toBe('conflict')
+    expect(g[1][5]).toBe('conflict')
+  })
+
+  it('假设一个反馈=0 已排除的格 → conflict', () => {
+    const g = basicSolve(
+      baseInput({ guesses: [{ guess: '5000', feedback: 0 }], assumptions: [5, null, null, null] }),
+    )
+    expect(g[0][5]).toBe('conflict')
+  })
+
+  it('右键划除 → crossed；默认 available；无效假设不误排除', () => {
+    const g = basicSolve(baseInput({ crossedOut: new Set(['0-7']), assumptions: [99, null, null, null] }))
+    expect(g[0][7]).toBe('crossed')
+    expect(g[1][1]).toBe('available')
+    expect(g.flat().filter((s) => s === 'eliminated')).toHaveLength(0)
   })
 })
