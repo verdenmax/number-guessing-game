@@ -289,3 +289,22 @@ describe('SolverPanel 菜单 corner', () => {
     expect(w.find('.solver-menu').exists()).toBe(false)
   })
 })
+
+describe('SolverPanel 剩 N 个可能', () => {
+  it('智能模式显示剩余候选数，≤8 时列出', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [{ guess: '1234', feedback: 4 }], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const txt = w.find('.solver-count').text()
+    expect(txt).toContain('剩 1 个可能')
+    expect(txt).toContain('1234')
+  })
+
+  it('基础模式不显示剩余计数', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.find('.solver-mode input').setValue(false)
+    await w.vm.$nextTick()
+    expect(w.find('.solver-count').exists()).toBe(false)
+  })
+})

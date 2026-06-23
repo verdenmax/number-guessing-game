@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import type { GuessRecord } from '../game/types'
-import { solve, basicSolve, type CellState } from '../game/solver'
+import { solve, basicSolve, remainingCount, type CellState } from '../game/solver'
 
 const props = defineProps<{
   digits: number
@@ -22,6 +22,17 @@ const grid = computed(() =>
     assumptions: assumptions.value,
     crossedOut: crossedOut.value,
   }),
+)
+
+const meta = computed(() =>
+  smartMode.value
+    ? remainingCount({
+        digits: props.digits,
+        guesses: props.guesses,
+        assumptions: assumptions.value,
+        crossedOut: crossedOut.value,
+      })
+    : null,
 )
 
 const sideName = computed(() => (props.side === 'red' ? '红方' : '蓝方'))
@@ -148,6 +159,9 @@ function reset() {
         </ul>
         <p class="legend-ops">左键＝假设此位 · 右键／Shift+左键／Delete＝划除 · 「重置假设」清空全部</p>
       </div>
+      <p v-if="meta" class="solver-count">
+        剩 {{ meta.remaining }} 个可能<span v-if="meta.candidates.length">：{{ meta.candidates.join('、') }}</span>
+      </p>
       <div class="solver-grid" :style="{ gridTemplateColumns: `repeat(${digits}, 1fr)` }">
         <div v-for="pos in digits" :key="`h-${pos}`" class="solver-col-head">位{{ pos }}</div>
         <template v-for="digit in 10" :key="`row-${digit}`">
