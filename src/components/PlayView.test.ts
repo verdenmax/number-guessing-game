@@ -51,4 +51,19 @@ describe('PlayView', () => {
     const w = mount(PlayView, { props: baseProps })
     expect(w.text()).toContain('1234')
   })
+
+  it('最新猜测进入 aria-live 状态区（读屏可闻）', () => {
+    const history = { p1: [{ guess: '1234', feedback: 2 }], p2: [] }
+    const w = mount(PlayView, { props: { digits: 4, current: 'p2', validate: okValidate, history } })
+    const status = w.find('[role="status"]')
+    expect(status.exists()).toBe(true)
+    expect(status.attributes('aria-live')).toBe('polite')
+    expect(status.text()).toContain('1234')
+    expect(status.text()).toContain('正确数目 2')
+  })
+
+  it('猜测记录区有可访问标题 h2', () => {
+    const w = mount(PlayView, { props: { digits: 4, current: 'p1', validate: okValidate, history: { p1: [], p2: [] } } })
+    expect(w.find('.histories h2').exists()).toBe(true)
+  })
 })
