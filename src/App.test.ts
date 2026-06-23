@@ -102,6 +102,17 @@ describe('App 整合', () => {
     await w.vm.$nextTick()
     expect(w.findComponent(SetupView).exists()).toBe(true)
   })
+
+  it('App 透传 names 到 PlayView（对局中可用昵称）', async () => {
+    const w = mount(App)
+    const sv = w.findComponent(SetupView)
+    sv.vm.$emit('setName', 'p1', '红哥')
+    sv.vm.$emit('setName', 'p2', '蓝妹')
+    sv.vm.$emit('setSecret', 'p1', '1234')
+    sv.vm.$emit('setSecret', 'p2', '5678')
+    await w.vm.$nextTick()
+    expect(w.findComponent(PlayView).props('names')).toEqual({ p1: '红哥', p2: '蓝妹' })
+  })
 })
 
 describe('App 顶层标题与导航', () => {
