@@ -33,7 +33,7 @@ describe('GuessInput', () => {
     const w = mount(GuessInput, { props: { digits: 4, label: '猜', validate: len4 } })
     const input = w.find('input')
     await input.setValue('0011')
-    await w.find('button.confirm').trigger('click')
+    await w.find('form.guess-input').trigger('submit')
     expect(w.emitted('confirm')).toEqual([['0011']])
   })
 
@@ -42,7 +42,7 @@ describe('GuessInput', () => {
     const input = w.find('input')
     await input.setValue('12')
     expect(w.find('button.confirm').attributes('disabled')).toBeDefined()
-    await input.trigger('keyup.enter')
+    await w.find('form.guess-input').trigger('submit')
     expect(w.emitted('confirm')).toBeUndefined()
   })
 
@@ -50,8 +50,16 @@ describe('GuessInput', () => {
     const w = mount(GuessInput, { props: { digits: 4, label: '猜', validate: len4 } })
     const input = w.find('input')
     await input.setValue('1234')
-    await w.find('button.confirm').trigger('click')
+    await w.find('form.guess-input').trigger('submit')
     expect(w.emitted('confirm')).toEqual([['1234']])
     expect((input.element as HTMLInputElement).value).toBe('')
+  })
+
+  it('label 与 input 关联（for/id）', () => {
+    const w = mount(GuessInput, { props: { digits: 4, label: '红方输入', validate: len4 } })
+    const id = w.find('input').attributes('id')
+    expect(id).toBeTruthy()
+    expect(w.find('label.label').attributes('for')).toBe(id)
+    expect(w.find('form.guess-input').exists()).toBe(true)
   })
 })
