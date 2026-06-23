@@ -152,6 +152,7 @@ body {
 input {
   flex: 1;
   width: 100%;
+  min-width: 0;
   padding: 14px 16px;
   font-family: var(--font-mono);
   font-size: 1.4rem;
@@ -394,6 +395,12 @@ button:disabled {
 
   .app > h1 {
     font-size: 1.5rem;
+  }
+
+  input {
+    font-size: 1.2rem;
+    letter-spacing: 0.2em;
+    padding: 12px 12px;
   }
 
   .histories {
