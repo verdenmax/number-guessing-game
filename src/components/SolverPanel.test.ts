@@ -462,4 +462,14 @@ describe('SolverPanel 交互方式开关（菜单/右键快捷）', () => {
     await setGesture(w, true)
     expect(w.find('.legend-ops').text()).toContain('右键')
   })
+
+  it('格子 aria 随模式自适应：菜单有 haspopup，快捷无并加动作提示', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    const cell = () => w.findAll('.solver-cell')[5 * 4 + 0]
+    expect(cell().attributes('aria-haspopup')).toBe('menu')
+    await setGesture(w, true)
+    expect(cell().attributes('aria-haspopup')).toBeUndefined()
+    expect(cell().attributes('aria-label')).toContain('左键假设')
+  })
 })
