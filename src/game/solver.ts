@@ -140,10 +140,10 @@ export function basicSolve(input: SolverInput): Grid {
     for (let digit = 0; digit < 10; digit++) {
       const key = `${pos}-${digit}`
       let state: CellState
-      if (crossedOut.has(key)) {
-        state = 'crossed'
-      } else if (assumptions[pos] === digit) {
+      if (assumptions[pos] === digit) {
         state = eliminated.has(key) ? 'conflict' : 'assumed'
+      } else if (crossedOut.has(key)) {
+        state = 'crossed'
       } else if (eliminated.has(key)) {
         state = 'eliminated'
       } else {
