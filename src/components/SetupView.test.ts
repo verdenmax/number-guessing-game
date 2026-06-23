@@ -65,5 +65,13 @@ describe('SetupView', () => {
     const fs1 = w.find('fieldset.setup-step')
     expect(fs1.exists()).toBe(true)
     expect(fs1.find('legend').text()).toContain('红方')
+    // 推进到 P2，确认蓝方一步同样是带 legend 的 fieldset
+    w.findComponent(SecretInput).vm.$emit('confirm', '1234')
+    await w.vm.$nextTick()
+    w.findComponent(HandoffScreen).vm.$emit('continue')
+    await w.vm.$nextTick()
+    const fs2 = w.find('fieldset.setup-step')
+    expect(fs2.exists()).toBe(true)
+    expect(fs2.find('legend').text()).toContain('蓝方')
   })
 })
