@@ -45,6 +45,18 @@ describe('SolverPanel 交互', () => {
     return w
   }
 
+  it('点击 ? 按钮切换图例显示', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    expect(w.find('.solver-legend').exists()).toBe(false)
+    await w.find('.solver-help-btn').trigger('click')
+    expect(w.find('.solver-legend').exists()).toBe(true)
+    // 图例含交互说明关键词
+    expect(w.find('.solver-legend').text()).toContain('右键')
+    await w.find('.solver-help-btn').trigger('click')
+    expect(w.find('.solver-legend').exists()).toBe(false)
+  })
+
   it('左键点格 → 该格变 assumed', async () => {
     const w = expand()
     await w.vm.$nextTick()
