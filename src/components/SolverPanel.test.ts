@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SolverPanel from './SolverPanel.vue'
 import type { GuessRecord } from '../game/types'
@@ -471,5 +471,24 @@ describe('SolverPanel 交互方式开关（菜单/右键快捷）', () => {
     await setGesture(w, true)
     expect(cell().attributes('aria-haspopup')).toBeUndefined()
     expect(cell().attributes('aria-label')).toContain('左键假设')
+  })
+
+  it('B2 菜单视口夹取：靠右靠下单元格不溢出', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const cell = w.findAll('.solver-cell')[5 * 4 + 3] // 最右列
+    vi.spyOn(cell.element, 'getBoundingClientRect').mockReturnValue({
+      left: 1000, right: 1040, top: 700, bottom: 740, width: 40, height: 40, x: 1000, y: 700,
+      toJSON: () => ({}),
+    } as DOMRect)
+    await cell.trigger('click')
+    const style = (w.find('.solver-menu').element as HTMLElement).style
+    const left = parseFloat(style.left)
+    const top = parseFloat(style.top)
+    expect(left).toBeLessThanOrEqual(window.innerWidth - 120 - 8 + 0.5) // 不溢出右
+    expect(top + 132).toBeLessThanOrEqual(window.innerHeight + 0.5) // 不溢出下（必要时上弹）
+    expect(left).toBeGreaterThanOrEqual(8)
+    expect(top).toBeGreaterThanOrEqual(8)
   })
 })

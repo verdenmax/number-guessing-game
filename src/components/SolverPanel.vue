@@ -79,7 +79,15 @@ function openMenu(e: MouseEvent, pos: number, digit: number) {
   }
   triggerEl = e.currentTarget as HTMLElement
   const r = triggerEl.getBoundingClientRect()
-  menuStyle.value = { left: `${r.left}px`, top: `${r.bottom}px` }
+  const MENU_W = 120
+  const MENU_H = 132
+  const pad = 8
+  let left = Math.min(r.left, window.innerWidth - MENU_W - pad)
+  left = Math.max(pad, left)
+  let top = r.bottom
+  if (top + MENU_H > window.innerHeight) top = r.top - MENU_H // 下方不够 → 向上弹
+  top = Math.max(pad, Math.min(top, window.innerHeight - MENU_H - pad))
+  menuStyle.value = { left: `${left}px`, top: `${top}px` }
   menuFor.value = { pos, digit }
   nextTick(() => menuEl.value?.querySelector('button')?.focus())
 }
