@@ -516,10 +516,11 @@ button:disabled {
 }
 
 .solver-cell.eliminated {
-  background: #d3d6dd;
-  color: #434b59;
+  background: #eaecf0;
+  color: #4b5563;
   text-decoration: line-through;
-  text-decoration-color: #9aa1ad;
+  text-decoration-color: #374151;
+  text-decoration-thickness: 2px;
 }
 
 /* 手动划除（点击格子→菜单「划除」）：你的"假设错误"标记。
