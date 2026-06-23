@@ -15,6 +15,8 @@ filterByFacts(candidates: string[], guesses: GuessRecord[]): string[]
 
 solve(input: SolverInput): Grid
 // 逐格状态推导：候选 → 事实过滤 → what-if（假设/划除）→ 每格五状态。
+basicSolve(input: SolverInput): Grid
+// 基础模式：只排除（反馈=0 + 假设格行/列），不产生 fixed；与 solve 同签名可互换。
 ```
 
 ## 类型定义
@@ -158,3 +160,33 @@ solve({ digits: 4,
 ```
 
 更多推导示例与流程图见 [L3 推理引擎细节](../L3-details/solver.md)。
+
+## `basicSolve(input)`
+
+| | |
+|---|---|
+| **签名** | `basicSolve(input: SolverInput): Grid` |
+| **返回** | `Grid` —— 与 `solve` 同构的 `CellState` 二维数组；**与 `solve` 同签名可互换** |
+
+基础模式只做「排除」，**绝不自动判 `fixed`**。先构造排除集 `eliminated`，再逐格按优先级定状态。
+
+### 排除集来源
+
+1. **规则①（反馈=0）**：对每条 `feedback === 0` 的猜测，其每一位 `i` 的数字加入排除键 `` `${i}-${Number(guess[i])}` ``。
+2. **规则②（假设的行/列）**：对每个**有效**假设位 `(p, d)`（`d != null && d >= 0 && d <= 9`）：同一数字 `d` 在**其它每个位置**（行排除 `` `${p2}-${d}` ``, `p2 !== p`）、同一位置 `p` 的**其它每个数字**（列排除 `` `${p}-${d2}` ``, `d2 !== d`）都加入排除集；不排除假设格自身。
+
+### 每格状态推导（与源码一致，假设优先，与 `solve` 对齐）
+
+```text
+key = `${pos}-${digit}`
+if assumptions[pos] === digit:
+    state = eliminated.has(key) ? 'conflict' : 'assumed'
+elif crossedOut.has(key):
+    state = 'crossed'
+elif eliminated.has(key):
+    state = 'eliminated'
+else:
+    state = 'available'
+```
+
+> 优先级与 `solve` 一致：**假设最优先**，故被假设的格只会是 `assumed`/`conflict`，且手动划除不会掩盖矛盾。基础模式**永不产生 `fixed`**。
