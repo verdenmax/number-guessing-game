@@ -178,3 +178,45 @@ describe('SolverPanel what-if 集成', () => {
     expect(cells[5 * 4 + 1].classes()).toContain('eliminated')
   })
 })
+
+describe('SolverPanel 智能/基础开关', () => {
+  it('默认智能模式（solve）：构造 fixed 场景该格为 fixed', async () => {
+    const guesses = Array.from({ length: 9 }, (_, d) => ({ guess: `${d}999`, feedback: 0 }))
+    const w = mount(SolverPanel, { props: { digits: 4, guesses, side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const idx = 9 * 4 + 0 // 行优先：digit=9 行、pos0
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('fixed')
+  })
+
+  it('切到基础模式（basicSolve）：同场景该格变 available（不自动判 fixed）', async () => {
+    const guesses = Array.from({ length: 9 }, (_, d) => ({ guess: `${d}999`, feedback: 0 }))
+    const w = mount(SolverPanel, { props: { digits: 4, guesses, side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const idx = 9 * 4 + 0
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('fixed')
+
+    await w.find('.solver-mode input').setValue(false) // 关闭智能
+    await w.vm.$nextTick()
+    const cell = w.findAll('.solver-cell')[idx]
+    expect(cell.classes()).toContain('available')
+    expect(cell.classes()).not.toContain('fixed')
+  })
+
+  it('切换模式保留已有假设与划除', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    let cells = w.findAll('.solver-cell')
+    await cells[5 * 4 + 0].trigger('click') // 假设 pos0=5
+    await cells[7 * 4 + 1].trigger('contextmenu') // 划除 pos1=7
+    expect(cells[5 * 4 + 0].classes()).toContain('assumed')
+
+    await w.find('.solver-mode input').setValue(false)
+    await w.vm.$nextTick()
+    cells = w.findAll('.solver-cell')
+    expect(cells[5 * 4 + 0].classes()).toContain('assumed') // 假设保留
+    expect(cells[7 * 4 + 1].classes()).toContain('crossed') // 划除保留
+  })
+})

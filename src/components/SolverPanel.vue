@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { GuessRecord } from '../game/types'
-import { solve, type CellState } from '../game/solver'
+import { solve, basicSolve, type CellState } from '../game/solver'
 
 const props = defineProps<{
   digits: number
@@ -11,11 +11,12 @@ const props = defineProps<{
 
 const expanded = ref(false)
 const showHelp = ref(false)
+const smartMode = ref(true)
 const assumptions = ref<(number | null)[]>(Array.from({ length: props.digits }, () => null))
 const crossedOut = ref<Set<string>>(new Set())
 
 const grid = computed(() =>
-  solve({
+  (smartMode.value ? solve : basicSolve)({
     digits: props.digits,
     guesses: props.guesses,
     assumptions: assumptions.value,
@@ -66,6 +67,10 @@ function reset() {
     </button>
     <div v-if="expanded" class="solver-body">
       <div class="solver-help-bar">
+        <label class="solver-mode">
+          <input type="checkbox" v-model="smartMode" />
+          🧠 智能推理
+        </label>
         <button
           type="button"
           class="solver-help-btn"
