@@ -1820,49 +1820,70 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 ## 阶段七：再战保留昵称
 
-### Task 17：换数字再战保留昵称（App.vue playAgain）
+### Task 17：换数字再战保留昵称（playAgain 保留 names + SetupView 预填）
+
+> **关键**：仅「playAgain 不清空 names」不足——SetupView 重走流程会用本地空昵称重新 `emit('setName', '')` 把 App 的 names 又清空。必须让 SetupView 用当前 names 预填昵称框，confirm 时才会回传同样的昵称。
 
 **Files:**
-- Modify: `src/App.vue`
-- Test: `src/App.test.ts`
+- Modify: `src/App.vue`（playAgain 不清 names；给 SetupView 传 `:names`）
+- Modify: `src/components/SetupView.vue`（新增 `names?` prop，seed 本地 p1Name/p2Name）
+- Test: `src/App.test.ts`、`src/components/SetupView.test.ts`
 
 - [ ] **Step 1：写失败测试**
 
-在 `src/App.test.ts` 追加（驱动一局到结束、再战后断言昵称仍在；沿用文件内既有 helper，如无则用如下直驱）：
+`src/components/SetupView.test.ts` 追加：
 ```typescript
-describe('App 换数字再战保留昵称', () => {
-  it('playAgain 后 names 不被清空（仅重置秘密数/历史）', async () => {
-    const w = mount(App)
-    // 设置 p1 昵称 + 秘密、过交接、设置 p2 昵称 + 秘密 → 进入对局
-    // 为稳健起见，直接断言组件内 names 在 reset 后保留：通过暴露的行为驱动
-    // 走最少 UI 路径：填红方昵称与数字
-    const nameInputs = () => w.findAll('.name-field input')
-    await nameInputs()[0].setValue('红哥')
-    await w.find('form.secret-input input').setValue('1234')
-    await w.find('form.secret-input').trigger('submit')
-    // 交接 → 蓝方
-    await w.find('.handoff button').trigger('click')
-    await nameInputs()[0].setValue('蓝妹')
-    await w.find('form.secret-input input').setValue('5678')
-    await w.find('form.secret-input').trigger('submit')
-    // 现在 phase=playing；构造一局结束较繁琐，改为直接验证再战语义：
-    // 触发 ResultView 之外，最小化——此处只断言昵称已 set 到 App 状态（reveal 文案）
-    // 若文件已有更直接的结束局 helper，请用之并在 ResultView 上断言 reveal 含「红哥」「蓝妹」，
-    // 再点击「换数字再战」后回到 setup，且 names 仍保留（再次进入 result 时 reveal 仍含昵称）。
-    expect(w.html()).toContain('红哥')
+  it('换数字再战：用 names 预填红方昵称框', () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate, names: { p1: '红哥', p2: '蓝妹' } } })
+    expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('红哥')
   })
-})
 ```
-> 说明：若 `App.test.ts` 已存在「玩完一局」的封装（驱动 p1/p2 猜测直到分出胜负），优先复用它：玩到 `over` → ResultView 的 `reveal`/标题应含设置过的昵称 → 点击 `.result-actions button`（换数字再战）→ 回到 `setup` → 再玩一局到 `over` → **断言昵称仍显示**（证明未被清空）。这是更强的断言；上面的最小版仅兜底保证测试可失败/通过。
+`src/App.test.ts` 追加：
+```typescript
+  it('换数字再战保留昵称（再战时昵称预填）', async () => {
+    const w = mount(App)
+    const sv = w.findComponent(SetupView)
+    sv.vm.$emit('setName', 'p1', '红哥')
+    sv.vm.$emit('setName', 'p2', '蓝妹')
+    sv.vm.$emit('setSecret', 'p1', '1234')
+    sv.vm.$emit('setSecret', 'p2', '5678')
+    await w.vm.$nextTick()
+    w.findComponent(PlayView).vm.$emit('guess', '5678') // p1 命中 p2 的 5678
+    await w.vm.$nextTick()
+    w.findComponent(PlayView).vm.$emit('guess', '0000') // p2 未中 → p1 胜
+    await w.vm.$nextTick()
+    expect(w.findComponent(ResultView).text()).toContain('红哥')
+    w.findComponent(ResultView).vm.$emit('playAgain')
+    await w.vm.$nextTick()
+    expect(w.findComponent(SetupView).exists()).toBe(true)
+    expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('红哥')
+  })
+```
 
-- [ ] **Step 2：确认失败/现状**
+- [ ] **Step 2：确认失败**
 
-Run: `npx vitest run src/App.test.ts`
-Expected: 视所写断言而定；关键是覆盖「reset 后 `names` 保留」这一行为。当前 `playAgain` 会 `names.value = { p1: null, p2: null }`，强断言版应 FAIL。
+Run: `npx vitest run src/App.test.ts src/components/SetupView.test.ts`
+Expected: FAIL —— SetupView 无 `names` prop（预填为空）；playAgain 清空 names。
 
-- [ ] **Step 3：改 `playAgain` 保留昵称**
+- [ ] **Step 3：SetupView 接受 names 并预填**
 
-将（line 42-47）：
+将 `defineProps<{ digits; validate }>()` 改为捕获 props + 加 `names?`：
+```typescript
+const props = defineProps<{
+  digits: number
+  validate: (value: string) => ValidationResult
+  names?: { p1: string | null; p2: string | null }
+}>()
+```
+将 `const p1Name = ref('')` / `const p2Name = ref('')` 改为：
+```typescript
+const p1Name = ref(props.names?.p1 ?? '')
+const p2Name = ref(props.names?.p2 ?? '')
+```
+
+- [ ] **Step 4：App 不清 names + 传入 SetupView**
+
+将 `playAgain`：
 ```typescript
 function playAgain() {
   reset()
@@ -1871,26 +1892,27 @@ function playAgain() {
   saveStatus.value = 'saving'
 }
 ```
-改为：
+改为（去掉清 names 行）：
 ```typescript
 function playAgain() {
-  reset() // 重置秘密数/历史/回合/outcome，回到 setup
-  // 保留 names：换数字再战时昵称不清空（重新设秘密数时仍可在昵称框覆盖）
+  reset() // 重置秘密数/历史/回合/outcome，回到 setup；保留 names
   saved.value = false
   saveStatus.value = 'saving'
 }
 ```
+给 `<SetupView ...>` 加 `:names="names"`（与既有 `@set-name="applyName"` 并列）。
 
-- [ ] **Step 4：测试 + 类型检查**
+- [ ] **Step 5：测试 + 类型检查**
 
-Run: `npx vitest run src/App.test.ts` → PASS。
+Run: `npx vitest run src/App.test.ts src/components/SetupView.test.ts` → PASS（既有「再来一局回到设置阶段」仍绿——它直接 emit playAgain 只断言回到 setup）。
 Run: `npx vue-tsc --noEmit` → 0 错误。
+Run: `npx vitest run` → 全过。
 
-- [ ] **Step 5：Commit**
+- [ ] **Step 6：Commit**
 
 ```bash
-git add src/App.vue src/App.test.ts
-git commit -m "feat: 换数字再战保留昵称（playAgain 不再清空 names）
+git add src/App.vue src/components/SetupView.vue src/App.test.ts src/components/SetupView.test.ts
+git commit -m "feat: 换数字再战保留昵称（playAgain 保留 names + SetupView 预填昵称框）
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
