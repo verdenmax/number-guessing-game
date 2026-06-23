@@ -54,4 +54,13 @@ describe('useInteractionMode', () => {
     expect(mode.value).toBe('gesture') // 内存仍生效
     spy.mockRestore()
   })
+
+  it('读取 localStorage 抛错时回退 menu（load 的 catch 分支）', async () => {
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('denied')
+    })
+    const { useInteractionMode } = await import('./useInteractionMode')
+    expect(useInteractionMode().value).toBe('menu')
+    spy.mockRestore()
+  })
 })
