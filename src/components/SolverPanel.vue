@@ -121,11 +121,17 @@ function reset() {
 </script>
 
 <template>
-  <section class="solver" :class="`side-${side}`">
-    <button type="button" class="solver-toggle" @click="expanded = !expanded">
-      {{ sideName }}助手 {{ expanded ? '▾' : '▸' }}
+  <aside class="solver" :class="`side-${side}`" :aria-label="`${sideName}推理助手`">
+    <button
+      type="button"
+      class="solver-toggle"
+      :aria-expanded="expanded"
+      :aria-controls="`solver-body-${side}`"
+      @click="expanded = !expanded"
+    >
+      {{ sideName }}助手 <span aria-hidden="true">{{ expanded ? '▾' : '▸' }}</span>
     </button>
-    <div v-if="expanded" class="solver-body">
+    <div v-if="expanded" :id="`solver-body-${side}`" class="solver-body">
       <div class="solver-help-bar">
         <label class="solver-mode">
           <input type="checkbox" v-model="smartMode" />
@@ -148,16 +154,19 @@ function reset() {
         <ul class="legend-list">
           <li><span class="solver-cell available">5</span><span>可用：该位仍可能是这个数字</span></li>
           <li v-if="smartMode">
-            <span class="solver-cell fixed">5</span><span>确定：该位唯一可能就是它</span>
+            <span class="solver-cell fixed">5</span><span>事实确定：无需假设即可断定</span>
+          </li>
+          <li v-if="smartMode">
+            <span class="solver-cell fixedAssumed">5</span><span>假设下确定：依赖你当前的假设/划除</span>
           </li>
           <li><span class="solver-cell assumed">5</span><span>假设正确：你左键假设此位为该数字</span></li>
-          <li><span class="solver-cell crossed">5</span><span>假设错误：你右键划除（认为不是它）</span></li>
+          <li><span class="solver-cell crossed">5</span><span>已划除：你手动标记为「不是它」</span></li>
           <li>
             <span class="solver-cell eliminated">5</span><span>真的错误：据猜测历史逻辑上不可能</span>
           </li>
           <li><span class="solver-cell conflict">5</span><span>矛盾：假设互相冲突，无解</span></li>
         </ul>
-        <p class="legend-ops">左键＝假设此位 · 右键／Shift+左键／Delete＝划除 · 「重置假设」清空全部</p>
+        <p class="legend-ops">点击格子打开菜单：假设此位／划除／清除 · 「重置假设」清空全部</p>
       </div>
       <p v-if="meta" class="solver-count">
         剩 {{ meta.remaining }} 个可能<span v-if="meta.candidates.length">：{{ meta.candidates.join('、') }}</span>
@@ -210,5 +219,5 @@ function reset() {
       </div>
       <button type="button" class="solver-reset" @click="reset">重置假设</button>
     </div>
-  </section>
+  </aside>
 </template>

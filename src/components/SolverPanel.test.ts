@@ -318,3 +318,32 @@ describe('SolverPanel 剩 N 个可能', () => {
     expect(w.find('.solver-count').text()).toContain('剩 504 个可能')
   })
 })
+
+describe('SolverPanel 图例与语义（事实/假设确定、地标、aria）', () => {
+  it('智能模式图例区分 事实确定 / 假设下确定', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.find('.solver-help-btn').trigger('click')
+    await w.vm.$nextTick()
+    const legend = w.find('.solver-legend')
+    expect(legend.find('.solver-cell.fixed').exists()).toBe(true)
+    expect(legend.find('.solver-cell.fixedAssumed').exists()).toBe(true)
+    expect(legend.text()).toContain('事实确定')
+    expect(legend.text()).toContain('假设下确定')
+  })
+
+  it('solver-toggle 反映 aria-expanded', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    const toggle = w.find('.solver-toggle')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    await toggle.trigger('click')
+    expect(w.find('.solver-toggle').attributes('aria-expanded')).toBe('true')
+  })
+
+  it('面板是具名 aside 互补地标', () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'blue' } })
+    const aside = w.find('aside.solver')
+    expect(aside.exists()).toBe(true)
+    expect(aside.attributes('aria-label')).toContain('蓝方')
+  })
+})
