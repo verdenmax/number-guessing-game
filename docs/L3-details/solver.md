@@ -145,6 +145,7 @@ if (assumptions[pos] === digit) {
 - props：`digits` / `guesses` / `side`（`'red' | 'blue'`），**无对外 emits**。
 - 本地状态：`expanded`（默认 `false` 收起）、`showHelp`、`smartMode`（默认 `true` 智能）、`assumptions`、`crossedOut`，`grid` 为 `computed`，随 `guesses`/本地状态与 `smartMode` 自动重算（智能走 `solve`、基础走 `basicSolve`）。
 - 交互：**点击/触摸格子**打开菜单（假设此位／划除／清除）；键盘 Enter/Space 唤出、Esc 关闭；**重置假设**清空本面板；**折叠条**展开/收起。智能模式额外显示「剩 N 个可能」。
+- 交互方式开关（全局、`localStorage` 键 `ngg:solver-interaction` 记住，默认「点击菜单」）：底部勾选「🖱 右键快捷」切到旧手势——左键＝假设、右键／Shift+左键／Delete＝划除、再点取消；不勾＝点击格子弹菜单（视口边缘自动夹取、靠下上弹）。红蓝两面板共享同一全局偏好（composable `useInteractionMode`）。
 - App 接线：红方面板传 `state.history.p1`、蓝方传 `state.history.p2`，仅 `playing` 阶段渲染。props/交互详见 [L4 components API](../L4-api/components.md)。
 
 ## 基础模式（basicSolve）

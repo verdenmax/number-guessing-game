@@ -184,9 +184,12 @@
 
 | 操作 | 行为 |
 |------|------|
-| 点击/触摸格（或回车/空格） | 打开菜单：假设此位（assumed，替换本列）/ 划除（crossedOut）/ 清除 |
+| 默认（点击菜单模式）：点击/触摸格（或回车/空格） | 打开菜单：假设此位（assumed，替换本列）/ 划除（crossedOut）/ 清除 |
 | Esc / 点背板 | 关闭菜单 |
+| 🖱 右键快捷（底部勾选，全局/`localStorage` 记住） | 切到手势模式：左键假设 · 右键/Shift+左键/Delete 划除 · 再点取消（不弹菜单） |
 | 重置假设 | 清空本面板 assumptions + crossedOut（回纯事实推理） |
 | 折叠条 | 点击展开 / 收起；**默认收起** |
+
+交互方式由 composable `useInteractionMode`（`src/composables/useInteractionMode.ts`，类型 `'menu' | 'gesture'`，存 `localStorage` 键 `ngg:solver-interaction`，默认 `'menu'`）提供，为**模块级单例**——红蓝两个 SolverPanel 共享同一偏好，切换其一两侧同步、刷新后保留。
 
 格子颜色对应 `CellState`（7 态，权威说明见 [L4 solver 状态表](./solver.md)）：`available`（普通）/ `eliminated`（灰，事实/联动排除）/ `crossed`（琥珀虚线，手动划除）/ `fixed`（绿实心+✓，事实确定）/ `fixedAssumed`（绿虚线+*，仅当前假设/划除下确定）/ `assumed`（高亮，你的假设）/ `conflict`（红，矛盾）。
