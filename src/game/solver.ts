@@ -48,14 +48,12 @@ export interface SolverInput {
 
 export type Grid = CellState[][]
 
-export function solve(input: SolverInput): Grid {
+function computeFactAndWhatif(input: SolverInput): { factPossible: string[]; whatif: string[] } {
   const { digits, guesses, assumptions, crossedOut } = input
-
   const factPossible = filterByFacts(enumerateCandidates(digits), guesses)
   const whatif = factPossible.filter((c) => {
     for (let i = 0; i < digits; i++) {
       const a = assumptions[i]
-      // 仅对有效的 0-9 假设施加约束；null/undefined/越界值视为"无假设"，避免误清空 what-if
       if (a != null && a >= 0 && a <= 9 && c[i] !== String(a)) return false
     }
     for (const key of crossedOut) {
@@ -64,6 +62,12 @@ export function solve(input: SolverInput): Grid {
     }
     return true
   })
+  return { factPossible, whatif }
+}
+
+export function solve(input: SolverInput): Grid {
+  const { digits, assumptions, crossedOut } = input
+  const { factPossible, whatif } = computeFactAndWhatif(input)
 
   const whatifEmpty = whatif.length === 0
 
@@ -108,6 +112,11 @@ export function solve(input: SolverInput): Grid {
     grid.push(col)
   }
   return grid
+}
+
+export function remainingCount(input: SolverInput): { remaining: number; candidates: string[] } {
+  const { whatif } = computeFactAndWhatif(input)
+  return { remaining: whatif.length, candidates: whatif.length <= 8 ? [...whatif] : [] }
 }
 
 export function basicSolve(input: SolverInput): Grid {

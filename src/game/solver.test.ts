@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { enumerateCandidates, filterByFacts, solve, basicSolve } from './solver'
+import { enumerateCandidates, filterByFacts, solve, basicSolve, remainingCount } from './solver'
 import type { GuessRecord } from './types'
 import type { SolverInput } from './solver'
 
@@ -361,5 +361,31 @@ describe('basicSolve（基础模式：只排除、不确定）', () => {
     // 两位假设同数字 + 划除其一 → 仍 conflict（不被 crossed 掩盖）
     const g2 = basicSolve(baseInput({ assumptions: [5, 5, null, null], crossedOut: new Set(['0-5']) }))
     expect(g2[0][5]).toBe('conflict')
+  })
+})
+
+describe('remainingCount：剩余候选数与列表', () => {
+  it('无猜测无假设：digits=1 → 10 个候选，列出全部', () => {
+    const r = remainingCount({ digits: 1, guesses: [], assumptions: [null], crossedOut: new Set() })
+    expect(r.remaining).toBe(10)
+    expect(r.candidates).toEqual([]) // >8 不列出
+  })
+
+  it('候选 ≤ 8 时列出（按 whatif）', () => {
+    const r = remainingCount({ digits: 2, guesses: [{ guess: '01', feedback: 2 }], assumptions: [null, null], crossedOut: new Set() })
+    expect(r.remaining).toBe(1)
+    expect(r.candidates).toEqual(['01'])
+  })
+
+  it('假设收窄后计数随之变化', () => {
+    const r = remainingCount({ digits: 2, guesses: [{ guess: '00', feedback: 1 }], assumptions: [5, null], crossedOut: new Set() })
+    expect(r.remaining).toBe(1)
+    expect(r.candidates).toEqual(['50'])
+  })
+
+  it('假设矛盾 → whatif 空 → remaining 0、无列表', () => {
+    const r = remainingCount({ digits: 2, guesses: [], assumptions: [5, 5], crossedOut: new Set() })
+    expect(r.remaining).toBe(0)
+    expect(r.candidates).toEqual([])
   })
 })
