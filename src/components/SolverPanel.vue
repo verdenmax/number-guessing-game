@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import type { GuessRecord } from '../game/types'
 import { solve, basicSolve, type CellState } from '../game/solver'
 
@@ -36,23 +36,71 @@ const stateLabel: Record<CellState, string> = {
   conflict: '矛盾',
 }
 
-function toggleAssumption(pos: number, digit: number) {
+const menuFor = ref<{ pos: number; digit: number } | null>(null)
+const menuStyle = ref<{ left: string; top: string }>({ left: '0px', top: '0px' })
+const menuEl = ref<HTMLElement | null>(null)
+let triggerEl: HTMLElement | null = null
+
+function isMenuOpen(pos: number, digit: number) {
+  return menuFor.value?.pos === pos && menuFor.value?.digit === digit
+}
+
+const canClear = computed(() => {
+  const m = menuFor.value
+  if (!m) return false
+  return assumptions.value[m.pos] === m.digit || crossedOut.value.has(`${m.pos}-${m.digit}`)
+})
+
+function openMenu(e: MouseEvent, pos: number, digit: number) {
+  if (isMenuOpen(pos, digit)) {
+    closeMenu()
+    return
+  }
+  triggerEl = e.currentTarget as HTMLElement
+  menuStyle.value = { left: `${triggerEl.offsetLeft}px`, top: `${triggerEl.offsetTop + triggerEl.offsetHeight}px` }
+  menuFor.value = { pos, digit }
+  nextTick(() => menuEl.value?.querySelector('button')?.focus())
+}
+
+function closeMenu() {
+  menuFor.value = null
+  triggerEl?.focus()
+  triggerEl = null
+}
+
+function chooseAssume() {
+  const m = menuFor.value
+  if (!m) return
   const next = assumptions.value.slice()
-  next[pos] = next[pos] === digit ? null : digit
+  next[m.pos] = m.digit
   assumptions.value = next
+  closeMenu()
 }
 
-function toggleCrossOut(pos: number, digit: number) {
+function chooseCross() {
+  const m = menuFor.value
+  if (!m) return
   const next = new Set(crossedOut.value)
-  const key = `${pos}-${digit}`
-  if (next.has(key)) next.delete(key)
-  else next.add(key)
+  next.add(`${m.pos}-${m.digit}`)
   crossedOut.value = next
+  closeMenu()
 }
 
-function onCellClick(e: MouseEvent, pos: number, digit: number) {
-  if (e.shiftKey) toggleCrossOut(pos, digit)
-  else toggleAssumption(pos, digit)
+function chooseClear() {
+  const m = menuFor.value
+  if (!m) return
+  if (assumptions.value[m.pos] === m.digit) {
+    const a = assumptions.value.slice()
+    a[m.pos] = null
+    assumptions.value = a
+  }
+  const key = `${m.pos}-${m.digit}`
+  if (crossedOut.value.has(key)) {
+    const s = new Set(crossedOut.value)
+    s.delete(key)
+    crossedOut.value = s
+  }
+  closeMenu()
 }
 
 function reset() {
@@ -111,13 +159,40 @@ function reset() {
             :class="grid[pos - 1][digit - 1]"
             :aria-label="`位${pos} 数字${digit - 1} ${stateLabel[grid[pos - 1][digit - 1]]}`"
             :aria-pressed="grid[pos - 1][digit - 1] === 'assumed'"
-            @click="onCellClick($event, pos - 1, digit - 1)"
-            @contextmenu.prevent="toggleCrossOut(pos - 1, digit - 1)"
-            @keydown.delete.prevent="toggleCrossOut(pos - 1, digit - 1)"
+            aria-haspopup="menu"
+            :aria-expanded="isMenuOpen(pos - 1, digit - 1)"
+            @click="openMenu($event, pos - 1, digit - 1)"
+            @contextmenu.prevent="openMenu($event, pos - 1, digit - 1)"
           >
             {{ digit - 1 }}
           </button>
         </template>
+        <div v-if="menuFor" class="solver-menu-backdrop" @click="closeMenu"></div>
+        <div
+          v-if="menuFor"
+          ref="menuEl"
+          class="solver-menu"
+          role="menu"
+          :style="menuStyle"
+          @keydown.esc="closeMenu"
+        >
+          <button type="button" role="menuitem" class="solver-menu-item" data-act="assume" @click="chooseAssume">
+            假设此位
+          </button>
+          <button type="button" role="menuitem" class="solver-menu-item" data-act="cross" @click="chooseCross">
+            划除
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            class="solver-menu-item"
+            data-act="clear"
+            :disabled="!canClear"
+            @click="chooseClear"
+          >
+            清除
+          </button>
+        </div>
       </div>
       <button type="button" class="solver-reset" @click="reset">重置假设</button>
     </div>
