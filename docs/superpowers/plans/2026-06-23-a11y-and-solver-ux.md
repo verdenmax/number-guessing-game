@@ -810,14 +810,20 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
   font-size: 0.78rem;
   color: var(--text-muted);
 }
+/* 层级：背板在格子之下(z5)，格子在背板之上(z10) → 菜单开着时点「别的格子」命中格子(切换锚点)而非背板；
+   点格子以外(面板/页面)命中背板 → 关闭。菜单(z20)在最上。 */
+.solver-cell {
+  position: relative;
+  z-index: 10;
+}
 .solver-menu-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 5;
 }
 .solver-menu {
   position: absolute;
-  z-index: 21;
+  z-index: 20;
   min-width: 104px;
   display: flex;
   flex-direction: column;
@@ -847,16 +853,20 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 }
 ```
 
-- [ ] **Step 4：全量测试 + 构建**
+- [ ] **Step 4：修过时的 crossed CSS 注释（划除交互已改菜单）**
+
+定位 `.solver-cell.crossed` 之上的注释（`grep -n "右键/Shift+点击/Delete" src/style.css`），把提及「右键/Shift+点击/Delete」的注释改为「点击格子→菜单「划除」」，与新交互一致（仅注释，不改样式值）。
+
+- [ ] **Step 5：全量测试 + 构建**
 
 Run: `npx vitest run` → 全过（CSS 不影响 jsdom 行为）。
 Run: `npm run build` → `vue-tsc --noEmit` 0 错误 + vite build 成功。
 
-- [ ] **Step 5：视觉自检（headless，可选但建议）**
+- [ ] **Step 6：视觉自检（headless，可选但建议）**
 
 构建后用 `/usr/bin/chromium --headless=new --no-sandbox --screenshot` 渲染一段含展开面板 + 打开菜单（给 `.solver-menu` 内联 `left/top`）+ 一个 `fixedAssumed` 格子的临时 HTML（链接 dist CSS），确认：菜单为带阴影的小浮层、`fixedAssumed` 为绿虚线带 `*` 角标、与实心 `fixed` 可区分。完成后删除临时文件（勿提交 dist 临时件）。
 
-- [ ] **Step 6：Commit**
+- [ ] **Step 7：Commit**
 
 ```bash
 git add src/style.css
@@ -1995,13 +2005,20 @@ remainingCount(input: SolverInput): { remaining: number; candidates: string[] }
 - 面板侧「交互」一条（约 line 145，原述「左键=假设 / 右键/Shift/Delete=划除」）改为菜单模型：
   new: `- 交互：**点击/触摸格子**打开菜单（假设此位／划除／清除）；键盘 Enter/Space 唤出、Esc 关闭；**重置假设**清空本面板；**折叠条**展开/收起。智能模式额外显示「剩 N 个可能」。`
 
-- [ ] **Step 8：核对 + 提交**
+- [ ] **Step 8：扫尾——README + L4 components + L3 基础模式段的过时交互文案**
 
-Run: `grep -rn "右键\|Shift\|Delete\|六状态\|每格六" docs/L3-details/solver.md docs/L4-api/solver.md` → 应无残留（划除交互均已改菜单；状态计数均为七）。
+把以下「左键/右键/Shift/Delete」交互描述统一改为菜单模型（点击格子→菜单：假设此位／划除／清除）：
+- `README.md`（约 line 28-29「点击假设/划除」两条）：改为「**标记**：点击/触摸任一格打开菜单，选「假设此位」做 what-if 推演（联动收窄）、「划除」手动标记不可能、「清除」撤销；一列最多一个假设。」
+- `docs/L4-api/components.md`（约 line 187-188 交互表两行）：把「左键点格 / Shift+左键 / 右键 / Delete」两行合并/改为：`| 点击/触摸格（或回车/空格）| 打开菜单：假设此位（assumed，替换本列）/ 划除（crossedOut）/ 清除 |`，并补一行 `| Esc / 点背板 | 关闭菜单 |`。
+- `docs/L3-details/solver.md` 基础模式段（约 line 153「左键假设」、156-157「右键划除」）：把「左键假设」改为「假设（菜单「假设此位」）」、「右键划除」改为「划除（菜单「划除」）」。
+
+- [ ] **Step 9：核对 + 提交**
+
+Run: `grep -rn "左键\|右键\|Shift\|Delete\|六状态\|每格六" README.md docs/L3-details/solver.md docs/L4-api/solver.md docs/L4-api/components.md` → 应无残留（划除/假设交互均已改菜单；状态计数均为七）。
 Run: `npx vitest run` → 仍全过（仅文档改动）。
 ```bash
-git add docs/L3-details/solver.md docs/L4-api/solver.md
-git commit -m "docs(solver): 七态(新增 fixedAssumed) + remainingCount + 划除交互改菜单
+git add README.md docs/L3-details/solver.md docs/L4-api/solver.md docs/L4-api/components.md
+git commit -m "docs(solver): 七态(新增 fixedAssumed) + remainingCount + 交互全改菜单(README/L3/L4)
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
