@@ -730,9 +730,11 @@ button:disabled {
 .app-head h1 {
   grid-column: 2;
 }
-.nav-history {
+.app-nav {
   grid-column: 3;
   justify-self: end;
+}
+.nav-history {
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
