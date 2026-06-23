@@ -490,5 +490,34 @@ describe('SolverPanel 交互方式开关（菜单/右键快捷）', () => {
     expect(top + 132).toBeLessThanOrEqual(window.innerHeight + 0.5) // 不溢出下（必要时上弹）
     expect(left).toBeGreaterThanOrEqual(8)
     expect(top).toBeGreaterThanOrEqual(8)
+    expect(top).toBeLessThanOrEqual(700) // 上弹：菜单顶在格子上方（r.top=700）
+  })
+
+  it('B2 普通格子：留有空间时位置不变（不过度夹取）', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const cell = w.findAll('.solver-cell')[2 * 4 + 1] // 居中格
+    vi.spyOn(cell.element, 'getBoundingClientRect').mockReturnValue({
+      left: 200, right: 240, top: 120, bottom: 160, width: 40, height: 40, x: 200, y: 120,
+      toJSON: () => ({}),
+    } as DOMRect)
+    await cell.trigger('click')
+    const style = (w.find('.solver-menu').element as HTMLElement).style
+    expect(parseFloat(style.left)).toBe(200) // = r.left（未夹取）
+    expect(parseFloat(style.top)).toBe(160) // = r.bottom（下方有空间，不上弹）
+  })
+
+  it('B2 靠左：left 不小于 pad（下界夹取）', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const cell = w.findAll('.solver-cell')[2 * 4 + 0]
+    vi.spyOn(cell.element, 'getBoundingClientRect').mockReturnValue({
+      left: -50, right: -10, top: 120, bottom: 160, width: 40, height: 40, x: -50, y: 120,
+      toJSON: () => ({}),
+    } as DOMRect)
+    await cell.trigger('click')
+    expect(parseFloat((w.find('.solver-menu').element as HTMLElement).style.left)).toBe(8)
   })
 })
