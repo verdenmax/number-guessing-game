@@ -29,7 +29,7 @@
         │  叠加 assumptions（有效 0-9 位）   │
         │  叠加 crossedOut（"pos-digit"）    │
         ▼                                    │
-     whatif ──▶ 逐列出现集合 ──▶ 每格六状态  │
+     whatif ──▶ 逐列出现集合 ──▶ 每格七状态  │
                                              │
    （factPossible 仅用于判断「事实是否还有此数字」）
 ```
@@ -54,22 +54,24 @@ flowchart TD
     S --> GR["Grid: grid[pos][digit] = CellState"]
 ```
 
-## 六状态推导表
+## 七状态推导表
 
 `solve` 对每个格子 `(pos, digit)`，自上而下短路判定（与 `solver.ts` 实现一致）。先定义：
 
 - `posDigitOK` = `whatif` 中第 `pos` 位出现过该数字
 - `factHasIt` = `factPossible` 中第 `pos` 位出现过该数字
 - `colOnlyThis` = `whatif` 第 `pos` 位出现过的数字集合恰为 `{ 该数字 }`
+- `factColOnlyThis` = `factPossible` 第 `pos` 位出现过的数字集合恰为 `{ 该数字 }`
 - `whatifEmpty` = `whatif` 为空
 
 | 优先级 | 触发条件 | 结果状态 | 含义 |
 |:---:|------|------|------|
 | 1 | `assumptions[pos] === digit` 且 `posDigitOK && !whatifEmpty` | `assumed` | 用户假设且成立（高亮） |
 | 1 | `assumptions[pos] === digit` 但 `!posDigitOK` 或 `whatifEmpty` | `conflict` | 假设但 what-if 无此值 / what-if 空（标红） |
-| 2 | 该格被划除（`crossedOut` 含 `"pos-digit"`） | `crossed` | 手动划除（右键，琥珀虚线，仅标记） |
+| 2 | 该格被划除（`crossedOut` 含 `"pos-digit"`） | `crossed` | 手动划除（点击格子→菜单「划除」，琥珀虚线，仅标记） |
 | 3 | `!factHasIt` | `eliminated` | 事实排除：历史已否定（灰） |
-| 4 | `colOnlyThis` | `fixed` | 该列只剩这一个（自动确定，绿） |
+| 4a | `colOnlyThis` 且 `factColOnlyThis` | `fixed` | 事实唯一：无需假设即确定（绿实心✓） |
+| 4b | `colOnlyThis` 但非 `factColOnlyThis` | `fixedAssumed` | 仅当前假设/划除下唯一（绿虚线*） |
 | 5 | `!posDigitOK` | `eliminated` | 被其它假设/划除联动排除（灰） |
 | 6 | 其余 | `available` | 仍可能（默认） |
 
@@ -82,7 +84,7 @@ if (assumptions[pos] === digit) {
 } else if (!factHasIt) {
   state = 'eliminated'
 } else if (colOnlyThis) {
-  state = 'fixed'
+  state = factColOnlyThis ? 'fixed' : 'fixedAssumed'
 } else if (!posDigitOK) {
   state = 'eliminated'
 } else {
@@ -142,7 +144,7 @@ if (assumptions[pos] === digit) {
 
 - props：`digits` / `guesses` / `side`（`'red' | 'blue'`），**无对外 emits**。
 - 本地状态：`expanded`（默认 `false` 收起）、`showHelp`、`smartMode`（默认 `true` 智能）、`assumptions`、`crossedOut`，`grid` 为 `computed`，随 `guesses`/本地状态与 `smartMode` 自动重算（智能走 `solve`、基础走 `basicSolve`）。
-- 交互：**左键** = 假设（再点同格取消，点同列别格替换）；**Shift+左键 / 右键 / Delete** = 划除；**重置假设**清空本面板 assumptions+crossedOut；**折叠条**点击展开/收起。
+- 交互：**点击/触摸格子**打开菜单（假设此位／划除／清除）；键盘 Enter/Space 唤出、Esc 关闭；**重置假设**清空本面板；**折叠条**展开/收起。智能模式额外显示「剩 N 个可能」。
 - App 接线：红方面板传 `state.history.p1`、蓝方传 `state.history.p2`，仅 `playing` 阶段渲染。props/交互详见 [L4 components API](../L4-api/components.md)。
 
 ## 基础模式（basicSolve）
@@ -150,11 +152,11 @@ if (assumptions[pos] === digit) {
 助手面板可关闭「智能推理」开关切到基础模式（`basicSolve`）。**只推排除、绝不自动判确定**：
 
 - **规则①（反馈=0 排除）**：任一猜测 `feedback === 0` → 该猜测每位数字在对应位置标排除。
-- **规则②（已知正确的行列排除）**：用户左键假设某格 (p,d) 为正确 → 该数字所在**行**的其它位置、该位置所在**列**的其它数字 全部排除（各位互不相同、每位一个数）。
+- **规则②（已知正确的行列排除）**：用户假设（菜单「假设此位」）某格 (p,d) 为正确 → 该数字所在**行**的其它位置、该位置所在**列**的其它数字 全部排除（各位互不相同、每位一个数）。
 - **不产生 `fixed`**：某列即使只剩一个可能也不自动判「确定(绿)」。
 - **矛盾**：假设格落入排除集即 `conflict`（如两个位置假设同一数字、或假设一个反馈=0 已排除的格）。
-- **优先级假设最先**：与智能模式 `solve` 一致——被假设的格只会是 `assumed`/`conflict`，右键划除不会掩盖矛盾。
-- 右键划除在基础模式下仅作手动标记，不参与推理。
+- **优先级假设最先**：与智能模式 `solve` 一致——被假设的格只会是 `assumed`/`conflict`，划除（菜单「划除」）不会掩盖矛盾。
+- 划除（菜单「划除」）在基础模式下仅作手动标记，不参与推理。
 
 与智能 `solve`（全枚举 + 事实过滤 + 假设/划除联动 + 自动 fixed）的差异见
 [basic 模式设计 spec](../superpowers/specs/2026-06-23-solver-basic-mode-design.md)。开关每面板独立、默认开启智能、不持久化（刷新回默认）。

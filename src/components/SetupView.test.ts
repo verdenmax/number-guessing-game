@@ -59,4 +59,33 @@ describe('SetupView', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.emitted('setName')![0]).toEqual(['p1', ''])
   })
+
+  it('两步各为带 legend 的 fieldset 分组', async () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate } })
+    const fs1 = w.find('fieldset.setup-step')
+    expect(fs1.exists()).toBe(true)
+    expect(fs1.find('legend').text()).toContain('红方')
+    // 推进到 P2，确认蓝方一步同样是带 legend 的 fieldset
+    w.findComponent(SecretInput).vm.$emit('confirm', '1234')
+    await w.vm.$nextTick()
+    w.findComponent(HandoffScreen).vm.$emit('continue')
+    await w.vm.$nextTick()
+    const fs2 = w.find('fieldset.setup-step')
+    expect(fs2.exists()).toBe(true)
+    expect(fs2.find('legend').text()).toContain('蓝方')
+  })
+
+  it('换数字再战：用 names 预填红方昵称框', () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate, names: { p1: '红哥', p2: '蓝妹' } } })
+    expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('红哥')
+  })
+
+  it('换数字再战：蓝方一步也预填昵称', async () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate, names: { p1: '红哥', p2: '蓝妹' } } })
+    w.findComponent(SecretInput).vm.$emit('confirm', '1234')
+    await w.vm.$nextTick()
+    w.findComponent(HandoffScreen).vm.$emit('continue')
+    await w.vm.$nextTick()
+    expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('蓝妹')
+  })
 })

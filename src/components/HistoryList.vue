@@ -6,12 +6,21 @@ defineProps<{ records: GuessRecord[]; title?: string; side?: 'red' | 'blue' }>()
 <template>
   <div class="history" :class="side ? 'side-' + side : null">
     <h3 v-if="title">{{ title }}</h3>
-    <ol>
-      <li v-for="(r, i) in records" :key="i">
-        <span class="guess">{{ r.guess }}</span>
-        <span class="fb">正确数目 {{ r.feedback }}</span>
-      </li>
-    </ol>
+    <table v-if="records.length" class="guess-table">
+      <caption class="visually-hidden">{{ title ?? '该方' }}的猜测记录</caption>
+      <thead>
+        <tr>
+          <th scope="col">猜测</th>
+          <th scope="col">正确数目</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(r, i) in records" :key="i">
+          <td class="guess">{{ r.guess }}</td>
+          <td class="fb-cell"><span class="fb">{{ r.feedback }}</span></td>
+        </tr>
+      </tbody>
+    </table>
     <p v-if="records.length === 0" class="empty">还没有猜测</p>
   </div>
 </template>

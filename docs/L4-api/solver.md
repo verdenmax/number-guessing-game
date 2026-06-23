@@ -14,7 +14,9 @@ filterByFacts(candidates: string[], guesses: GuessRecord[]): string[]
 // 复用 engine.feedback，保留对每条猜测记录都吻合的候选。
 
 solve(input: SolverInput): Grid
-// 逐格状态推导：候选 → 事实过滤 → what-if（假设/划除）→ 每格六状态。
+// 逐格状态推导：候选 → 事实过滤 → what-if（假设/划除）→ 每格七状态。
+remainingCount(input: SolverInput): { remaining: number; candidates: string[] }
+// 剩余 what-if 候选数；candidates 在 ≤8 时给出列表，否则为空。
 basicSolve(input: SolverInput): Grid
 // 基础模式：只排除（反馈=0 + 假设格行/列），不产生 fixed；与 solve 同签名可互换。
 ```
@@ -22,7 +24,7 @@ basicSolve(input: SolverInput): Grid
 ## 类型定义
 
 ```typescript
-export type CellState = 'available' | 'eliminated' | 'crossed' | 'fixed' | 'assumed' | 'conflict'
+export type CellState = 'available' | 'eliminated' | 'crossed' | 'fixed' | 'fixedAssumed' | 'assumed' | 'conflict'
 
 export interface SolverInput {
   digits: number
@@ -40,8 +42,9 @@ export type Grid = CellState[][]    // grid[pos][digit]，digits 列 × 10 行
 |------|------|------|
 | `available` | 仍可能（默认） | 普通 |
 | `eliminated` | 被排除：事实无此 / 联动排除 | 灰 |
-| `crossed` | 手动划除（右键 / Shift+左键 / Delete），仅标记、不参与推理 | 琥珀虚线 |
-| `fixed` | 该列 what-if 只剩这一个数字（自动确定） | 绿 |
+| `crossed` | 手动划除（点击格子→菜单「划除」），仅标记、不参与推理 | 琥珀虚线 |
+| `fixed` | 事实确定：无需假设，仅凭事实即唯一 | 绿实心 + ✓ |
+| `fixedAssumed` | 假设下确定：仅在当前假设/划除下唯一 | 绿虚线 + * |
 | `assumed` | 用户假设且成立 | 高亮 |
 | `conflict` | 用户假设但与现有约束矛盾 | 红 |
 
@@ -126,6 +129,7 @@ filterByFacts(enumerateCandidates(4), [])  // 5040
 posDigitOK  = whatif   中第 pos 位出现过 d
 factHasIt   = factPossible 中第 pos 位出现过 d
 colOnlyThis = whatif 第 pos 位出现过的数字集合恰为 { d }
+factColOnlyThis = factPossible 第 pos 位出现过的数字集合恰为 { d }
 whatifEmpty = whatif 为空
 
 if assumptions[pos] === digit:
@@ -135,7 +139,7 @@ elif crossedOut.has(`${pos}-${digit}`):
 elif !factHasIt:
     state = 'eliminated'        // 事实排除
 elif colOnlyThis:
-    state = 'fixed'             // 自动确定
+    state = factColOnlyThis ? 'fixed' : 'fixedAssumed'   // 事实唯一→fixed；仅假设下唯一→fixedAssumed
 elif !posDigitOK:
     state = 'eliminated'        // 联动排除
 else:
@@ -161,6 +165,15 @@ solve({ digits: 4,
 ```
 
 更多推导示例与流程图见 [L3 推理引擎细节](../L3-details/solver.md)。
+
+## `remainingCount(input)`
+
+| | |
+|---|---|
+| **签名** | `remainingCount(input: SolverInput): { remaining: number; candidates: string[] }` |
+| **返回** | `remaining` = `whatif` 候选数；`candidates` 在 `remaining ≤ 8` 时为候选字符串数组，否则 `[]` |
+
+与 `solve` 共用 `computeFactAndWhatif`（事实过滤 + 假设/划除叠加）。供 SolverPanel 在智能模式显示「剩 N 个可能」（≤8 时列出）。`whatif` 为空（假设矛盾）时 `remaining = 0`、`candidates = []`。
 
 ## `basicSolve(input)`
 

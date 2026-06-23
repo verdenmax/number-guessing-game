@@ -184,9 +184,9 @@
 
 | 操作 | 行为 |
 |------|------|
-| 左键点格 | 设该列假设（assumed）；再点同格取消；点同列别格替换（一列最多一个假设） |
-| Shift+左键 / 右键 / Delete | 切换手动划除（crossedOut）；再次取消 |
+| 点击/触摸格（或回车/空格） | 打开菜单：假设此位（assumed，替换本列）/ 划除（crossedOut）/ 清除 |
+| Esc / 点背板 | 关闭菜单 |
 | 重置假设 | 清空本面板 assumptions + crossedOut（回纯事实推理） |
 | 折叠条 | 点击展开 / 收起；**默认收起** |
 
-格子颜色对应 `CellState`：`available`（普通）/ `eliminated`（灰）/ `fixed`（绿，自动确定）/ `assumed`（高亮）/ `conflict`（红，矛盾）。
+格子颜色对应 `CellState`（7 态，权威说明见 [L4 solver 状态表](./solver.md)）：`available`（普通）/ `eliminated`（灰，事实/联动排除）/ `crossed`（琥珀虚线，手动划除）/ `fixed`（绿实心+✓，事实确定）/ `fixedAssumed`（绿虚线+*，仅当前假设/划除下确定）/ `assumed`（高亮，你的假设）/ `conflict`（红，矛盾）。

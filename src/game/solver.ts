@@ -37,7 +37,7 @@ export function filterByFacts(candidates: string[], guesses: GuessRecord[]): str
   return candidates.filter((c) => guesses.every((g) => feedback(c, g.guess) === g.feedback))
 }
 
-export type CellState = 'available' | 'eliminated' | 'crossed' | 'fixed' | 'assumed' | 'conflict'
+export type CellState = 'available' | 'eliminated' | 'crossed' | 'fixed' | 'fixedAssumed' | 'assumed' | 'conflict'
 
 export interface SolverInput {
   digits: number
@@ -48,14 +48,12 @@ export interface SolverInput {
 
 export type Grid = CellState[][]
 
-export function solve(input: SolverInput): Grid {
+function computeFactAndWhatif(input: SolverInput): { factPossible: string[]; whatif: string[] } {
   const { digits, guesses, assumptions, crossedOut } = input
-
   const factPossible = filterByFacts(enumerateCandidates(digits), guesses)
   const whatif = factPossible.filter((c) => {
     for (let i = 0; i < digits; i++) {
       const a = assumptions[i]
-      // 仅对有效的 0-9 假设施加约束；null/undefined/越界值视为"无假设"，避免误清空 what-if
       if (a != null && a >= 0 && a <= 9 && c[i] !== String(a)) return false
     }
     for (const key of crossedOut) {
@@ -64,6 +62,12 @@ export function solve(input: SolverInput): Grid {
     }
     return true
   })
+  return { factPossible, whatif }
+}
+
+export function solve(input: SolverInput): Grid {
+  const { digits, assumptions, crossedOut } = input
+  const { factPossible, whatif } = computeFactAndWhatif(input)
 
   const whatifEmpty = whatif.length === 0
 
@@ -88,6 +92,7 @@ export function solve(input: SolverInput): Grid {
       const factHasIt = factDigitsAt[pos].has(d)
       const colOnlyThis = derivedDigitsAt[pos].size === 1 && posDigitOK
 
+      const factColOnlyThis = factDigitsAt[pos].size === 1 && factHasIt
       let state: CellState
       if (assumptions[pos] === digit) {
         state = posDigitOK && !whatifEmpty ? 'assumed' : 'conflict'
@@ -96,7 +101,7 @@ export function solve(input: SolverInput): Grid {
       } else if (!factHasIt) {
         state = 'eliminated'
       } else if (colOnlyThis) {
-        state = 'fixed'
+        state = factColOnlyThis ? 'fixed' : 'fixedAssumed'
       } else if (!posDigitOK) {
         state = 'eliminated'
       } else {
@@ -107,6 +112,11 @@ export function solve(input: SolverInput): Grid {
     grid.push(col)
   }
   return grid
+}
+
+export function remainingCount(input: SolverInput): { remaining: number; candidates: string[] } {
+  const { whatif } = computeFactAndWhatif(input)
+  return { remaining: whatif.length, candidates: whatif.length <= 8 ? [...whatif] : [] }
 }
 
 export function basicSolve(input: SolverInput): Grid {

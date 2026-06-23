@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { enumerateCandidates, filterByFacts, solve, basicSolve } from './solver'
+import { enumerateCandidates, filterByFacts, solve, basicSolve, remainingCount } from './solver'
 import type { GuessRecord } from './types'
 import type { SolverInput } from './solver'
 
@@ -179,12 +179,12 @@ describe('solve', () => {
     expect(grid[0][7]).toBe('crossed') // 手动划除
   })
 
-  it('划除联动：划掉 pos0 除某值外所有 → 余下值 fixed', () => {
-    // 划掉 pos0 的 0..8（保留 9）→ pos0 只能是 9 → fixed
+  it('划除联动：划掉 pos0 除某值外所有 → 余下值 fixedAssumed（仅因划除而唯一）', () => {
+    // 划掉 pos0 的 0..8（保留 9）→ pos0 只能是 9，但唯一性仅来自手动划除（无事实）→ fixedAssumed
     const crossed = new Set<string>()
     for (let d = 0; d <= 8; d++) crossed.add(`0-${d}`)
     const grid = solve(baseInput({ crossedOut: crossed }))
-    expect(grid[0][9]).toBe('fixed')
+    expect(grid[0][9]).toBe('fixedAssumed')
   })
 
   it('digits=1 网格为 1 列', () => {
@@ -279,6 +279,33 @@ describe('solve', () => {
   })
 })
 
+describe('solve：区分事实确定 / 假设下确定（fixedAssumed）', () => {
+  it('无假设、事实即唯一 → fixed（实心）', () => {
+    const g = solve({ digits: 2, guesses: [{ guess: '01', feedback: 2 }], assumptions: [null, null], crossedOut: new Set() })
+    expect(g[0][0]).toBe('fixed')
+    expect(g[1][1]).toBe('fixed')
+  })
+
+  it('某列仅因假设而唯一 → fixedAssumed（依赖假设）', () => {
+    const g = solve({ digits: 2, guesses: [{ guess: '00', feedback: 1 }], assumptions: [5, null], crossedOut: new Set() })
+    expect(g[0][5]).toBe('assumed')
+    expect(g[1][0]).toBe('fixedAssumed')
+  })
+
+  it('撤掉该假设后，同格回到 available（并非事实确定）', () => {
+    const g = solve({ digits: 2, guesses: [{ guess: '00', feedback: 1 }], assumptions: [null, null], crossedOut: new Set() })
+    expect(g[1][0]).toBe('available')
+  })
+
+  it('假设矛盾导致 whatif 空时，不产生 fixedAssumed', () => {
+    const g = solve({ digits: 2, guesses: [], assumptions: [5, 5], crossedOut: new Set() })
+    const flat = g.flat()
+    expect(flat).not.toContain('fixedAssumed')
+    expect(g[0][5]).toBe('conflict')
+    expect(g[1][5]).toBe('conflict')
+  })
+})
+
 describe('basicSolve（基础模式：只排除、不确定）', () => {
   it('反馈=0 → 该猜测每位数字在对应位置 eliminated', () => {
     const g = basicSolve(baseInput({ guesses: [{ guess: '0000', feedback: 0 }] }))
@@ -334,5 +361,40 @@ describe('basicSolve（基础模式：只排除、不确定）', () => {
     // 两位假设同数字 + 划除其一 → 仍 conflict（不被 crossed 掩盖）
     const g2 = basicSolve(baseInput({ assumptions: [5, 5, null, null], crossedOut: new Set(['0-5']) }))
     expect(g2[0][5]).toBe('conflict')
+  })
+})
+
+describe('remainingCount：剩余候选数与列表', () => {
+  it('无猜测无假设：digits=1 → 10 个候选，列出全部', () => {
+    const r = remainingCount({ digits: 1, guesses: [], assumptions: [null], crossedOut: new Set() })
+    expect(r.remaining).toBe(10)
+    expect(r.candidates).toEqual([]) // >8 不列出
+  })
+
+  it('候选 ≤ 8 时列出（按 whatif）', () => {
+    const r = remainingCount({ digits: 2, guesses: [{ guess: '01', feedback: 2 }], assumptions: [null, null], crossedOut: new Set() })
+    expect(r.remaining).toBe(1)
+    expect(r.candidates).toEqual(['01'])
+  })
+
+  it('假设收窄后计数随之变化', () => {
+    const r = remainingCount({ digits: 2, guesses: [{ guess: '00', feedback: 1 }], assumptions: [5, null], crossedOut: new Set() })
+    expect(r.remaining).toBe(1)
+    expect(r.candidates).toEqual(['50'])
+  })
+
+  it('假设矛盾 → whatif 空 → remaining 0、无列表', () => {
+    const r = remainingCount({ digits: 2, guesses: [], assumptions: [5, 5], crossedOut: new Set() })
+    expect(r.remaining).toBe(0)
+    expect(r.candidates).toEqual([])
+  })
+
+  it('边界：剩 8 个时列出（升序）、剩 9 个时不列出；覆盖 crossedOut 路径', () => {
+    const r8 = remainingCount({ digits: 1, guesses: [], assumptions: [null], crossedOut: new Set(['0-0', '0-1']) })
+    expect(r8.remaining).toBe(8)
+    expect(r8.candidates).toEqual(['2', '3', '4', '5', '6', '7', '8', '9'])
+    const r9 = remainingCount({ digits: 1, guesses: [], assumptions: [null], crossedOut: new Set(['0-0']) })
+    expect(r9.remaining).toBe(9)
+    expect(r9.candidates).toEqual([])
   })
 })

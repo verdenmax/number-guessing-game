@@ -64,4 +64,12 @@ describe('HistoryDetail', () => {
     await w.find('.detail-del').trigger('click')
     expect(w.emitted('delete')).toBeUndefined()
   })
+
+  it('详情标题为 h1 且挂载时聚焦', () => {
+    const w = mount(HistoryDetail, { attachTo: document.body, props: { record: rec() } })
+    const h1 = w.find('h1')
+    expect(h1.text()).toContain('对局详情')
+    expect(document.activeElement).toBe(h1.element)
+    w.unmount()
+  })
 })

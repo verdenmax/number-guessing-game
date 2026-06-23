@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import type { GuessRecord } from '../game/types'
-import { solve, basicSolve, type CellState } from '../game/solver'
+import { solve, basicSolve, remainingCount, type CellState } from '../game/solver'
 
 const props = defineProps<{
   digits: number
@@ -24,6 +24,17 @@ const grid = computed(() =>
   }),
 )
 
+const meta = computed(() =>
+  smartMode.value
+    ? remainingCount({
+        digits: props.digits,
+        guesses: props.guesses,
+        assumptions: assumptions.value,
+        crossedOut: crossedOut.value,
+      })
+    : null,
+)
+
 const sideName = computed(() => (props.side === 'red' ? '红方' : '蓝方'))
 
 const stateLabel: Record<CellState, string> = {
@@ -31,27 +42,86 @@ const stateLabel: Record<CellState, string> = {
   eliminated: '已排除',
   crossed: '已划除',
   fixed: '确定',
+  fixedAssumed: '假设下确定',
   assumed: '已假设',
   conflict: '矛盾',
 }
 
-function toggleAssumption(pos: number, digit: number) {
+const menuFor = ref<{ pos: number; digit: number } | null>(null)
+const menuStyle = ref<{ left: string; top: string }>({ left: '0px', top: '0px' })
+const menuEl = ref<HTMLElement | null>(null)
+let triggerEl: HTMLElement | null = null
+
+function isMenuOpen(pos: number, digit: number) {
+  return menuFor.value?.pos === pos && menuFor.value?.digit === digit
+}
+
+const canClear = computed(() => {
+  const m = menuFor.value
+  if (!m) return false
+  return assumptions.value[m.pos] === m.digit || crossedOut.value.has(`${m.pos}-${m.digit}`)
+})
+
+function openMenu(e: MouseEvent, pos: number, digit: number) {
+  if (isMenuOpen(pos, digit)) {
+    closeMenu()
+    return
+  }
+  triggerEl = e.currentTarget as HTMLElement
+  const r = triggerEl.getBoundingClientRect()
+  menuStyle.value = { left: `${r.left}px`, top: `${r.bottom}px` }
+  menuFor.value = { pos, digit }
+  nextTick(() => menuEl.value?.querySelector('button')?.focus())
+}
+
+function closeMenu() {
+  menuFor.value = null
+  triggerEl?.focus()
+  triggerEl = null
+}
+
+// 焦点移出菜单（如键盘 Tab 出最后一项）→ 关闭菜单，但不把焦点抢回格子，让它落到去向处
+function onMenuFocusOut(e: FocusEvent) {
+  if (!menuFor.value) return
+  const next = e.relatedTarget as Node | null
+  if (next && menuEl.value?.contains(next)) return
+  menuFor.value = null
+  triggerEl = null
+}
+
+function chooseAssume() {
+  const m = menuFor.value
+  if (!m) return
   const next = assumptions.value.slice()
-  next[pos] = next[pos] === digit ? null : digit
+  next[m.pos] = m.digit
   assumptions.value = next
+  closeMenu()
 }
 
-function toggleCrossOut(pos: number, digit: number) {
+function chooseCross() {
+  const m = menuFor.value
+  if (!m) return
   const next = new Set(crossedOut.value)
-  const key = `${pos}-${digit}`
-  if (next.has(key)) next.delete(key)
-  else next.add(key)
+  next.add(`${m.pos}-${m.digit}`)
   crossedOut.value = next
+  closeMenu()
 }
 
-function onCellClick(e: MouseEvent, pos: number, digit: number) {
-  if (e.shiftKey) toggleCrossOut(pos, digit)
-  else toggleAssumption(pos, digit)
+function chooseClear() {
+  const m = menuFor.value
+  if (!m) return
+  if (assumptions.value[m.pos] === m.digit) {
+    const a = assumptions.value.slice()
+    a[m.pos] = null
+    assumptions.value = a
+  }
+  const key = `${m.pos}-${m.digit}`
+  if (crossedOut.value.has(key)) {
+    const s = new Set(crossedOut.value)
+    s.delete(key)
+    crossedOut.value = s
+  }
+  closeMenu()
 }
 
 function reset() {
@@ -61,15 +131,21 @@ function reset() {
 </script>
 
 <template>
-  <section class="solver" :class="`side-${side}`">
-    <button type="button" class="solver-toggle" @click="expanded = !expanded">
-      {{ sideName }}助手 {{ expanded ? '▾' : '▸' }}
+  <aside class="solver" :class="`side-${side}`" :aria-label="`${sideName}推理助手`">
+    <button
+      type="button"
+      class="solver-toggle"
+      :aria-expanded="expanded"
+      :aria-controls="`solver-body-${side}`"
+      @click="expanded = !expanded"
+    >
+      {{ sideName }}助手 <span aria-hidden="true">{{ expanded ? '▾' : '▸' }}</span>
     </button>
-    <div v-if="expanded" class="solver-body">
+    <div v-if="expanded" :id="`solver-body-${side}`" class="solver-body">
       <div class="solver-help-bar">
         <label class="solver-mode">
           <input type="checkbox" v-model="smartMode" />
-          🧠 智能推理
+          <span aria-hidden="true">🧠</span> 智能推理
         </label>
         <button
           type="button"
@@ -88,17 +164,23 @@ function reset() {
         <ul class="legend-list">
           <li><span class="solver-cell available">5</span><span>可用：该位仍可能是这个数字</span></li>
           <li v-if="smartMode">
-            <span class="solver-cell fixed">5</span><span>确定：该位唯一可能就是它</span>
+            <span class="solver-cell fixed">5</span><span>事实确定：无需假设即可断定</span>
           </li>
-          <li><span class="solver-cell assumed">5</span><span>假设正确：你左键假设此位为该数字</span></li>
-          <li><span class="solver-cell crossed">5</span><span>假设错误：你右键划除（认为不是它）</span></li>
+          <li v-if="smartMode">
+            <span class="solver-cell fixedAssumed">5</span><span>假设下确定：依赖你当前的假设/划除</span>
+          </li>
+          <li><span class="solver-cell assumed">5</span><span>假设正确：你在菜单中选「假设此位」</span></li>
+          <li><span class="solver-cell crossed">5</span><span>已划除：你手动标记为「不是它」</span></li>
           <li>
             <span class="solver-cell eliminated">5</span><span>真的错误：据猜测历史逻辑上不可能</span>
           </li>
           <li><span class="solver-cell conflict">5</span><span>矛盾：假设互相冲突，无解</span></li>
         </ul>
-        <p class="legend-ops">左键＝假设此位 · 右键／Shift+左键／Delete＝划除 · 「重置假设」清空全部</p>
+        <p class="legend-ops">点击格子打开菜单：假设此位／划除／清除 · 「重置假设」清空全部</p>
       </div>
+      <p v-if="meta" class="solver-count">
+        剩 {{ meta.remaining }} 个可能<span v-if="meta.candidates.length">：{{ meta.candidates.join('、') }}</span>
+      </p>
       <div class="solver-grid" :style="{ gridTemplateColumns: `repeat(${digits}, 1fr)` }">
         <div v-for="pos in digits" :key="`h-${pos}`" class="solver-col-head">位{{ pos }}</div>
         <template v-for="digit in 10" :key="`row-${digit}`">
@@ -110,15 +192,43 @@ function reset() {
             :class="grid[pos - 1][digit - 1]"
             :aria-label="`位${pos} 数字${digit - 1} ${stateLabel[grid[pos - 1][digit - 1]]}`"
             :aria-pressed="grid[pos - 1][digit - 1] === 'assumed'"
-            @click="onCellClick($event, pos - 1, digit - 1)"
-            @contextmenu.prevent="toggleCrossOut(pos - 1, digit - 1)"
-            @keydown.delete.prevent="toggleCrossOut(pos - 1, digit - 1)"
+            aria-haspopup="menu"
+            :aria-expanded="isMenuOpen(pos - 1, digit - 1)"
+            @click="openMenu($event, pos - 1, digit - 1)"
+            @contextmenu.prevent="openMenu($event, pos - 1, digit - 1)"
           >
             {{ digit - 1 }}
           </button>
         </template>
+        <div v-if="menuFor" class="solver-menu-backdrop" @click="closeMenu"></div>
+        <div
+          v-if="menuFor"
+          ref="menuEl"
+          class="solver-menu"
+          role="menu"
+          :style="menuStyle"
+          @keydown.esc="closeMenu"
+          @focusout="onMenuFocusOut"
+        >
+          <button type="button" role="menuitem" class="solver-menu-item" data-act="assume" @click="chooseAssume">
+            假设此位
+          </button>
+          <button type="button" role="menuitem" class="solver-menu-item" data-act="cross" @click="chooseCross">
+            划除
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            class="solver-menu-item"
+            data-act="clear"
+            :disabled="!canClear"
+            @click="chooseClear"
+          >
+            清除
+          </button>
+        </div>
       </div>
       <button type="button" class="solver-reset" @click="reset">重置假设</button>
     </div>
-  </section>
+  </aside>
 </template>

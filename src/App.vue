@@ -40,8 +40,7 @@ watch(phase, async (p) => {
 })
 
 function playAgain() {
-  reset()
-  names.value = { p1: null, p2: null }
+  reset() // 重置秘密数/历史/回合/outcome，回到 setup；保留 names
   saved.value = false
   saveStatus.value = 'saving'
 }
@@ -77,21 +76,19 @@ const activeSide = computed(() => {
 
         <main class="app">
           <header class="app-head">
-            <h1>Guessing Number</h1>
-            <button
-              v-if="phase !== 'playing'"
-              type="button"
-              class="nav-history"
-              @click="openHistory"
-            >
-              📜 历史
-            </button>
+            <h1>猜数字</h1>
+            <nav v-if="phase !== 'playing'" class="app-nav" aria-label="页面导航">
+              <button type="button" class="nav-history" @click="openHistory">
+                <span aria-hidden="true">📜</span> 历史
+              </button>
+            </nav>
           </header>
 
           <SetupView
             v-if="phase === 'setup'"
             :digits="config.digits"
             :validate="checkSecret"
+            :names="names"
             @set-secret="applySecret"
             @set-name="applyName"
           />

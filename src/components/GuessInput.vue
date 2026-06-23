@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, useId } from 'vue'
 import type { ValidationResult } from '../game/types'
 
 const props = defineProps<{
@@ -11,6 +11,7 @@ const emit = defineEmits<{ confirm: [value: string] }>()
 
 const value = ref('')
 const inputEl = ref<HTMLInputElement | null>(null)
+const id = useId()
 onMounted(() => inputEl.value?.focus())
 
 function onInput(e: Event) {
@@ -32,19 +33,19 @@ function confirm() {
 </script>
 
 <template>
-  <div class="guess-input">
-    <p class="label">{{ label }}</p>
+  <form class="guess-input" @submit.prevent="confirm">
+    <label class="label" :for="id">{{ label }}</label>
     <input
+      :id="id"
       ref="inputEl"
       type="text"
       :value="value"
       inputmode="numeric"
+      autocomplete="off"
       :maxlength="digits"
-      :aria-label="label"
       @input="onInput"
-      @keyup.enter="confirm"
     />
     <p v-if="errorText" class="error" role="alert">{{ errorText }}</p>
-    <button type="button" class="confirm" :disabled="!canSubmit" @click="confirm">提交猜测</button>
-  </div>
+    <button type="submit" class="confirm" :disabled="!canSubmit">提交猜测</button>
+  </form>
 </template>

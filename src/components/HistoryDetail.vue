@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { GameRecord } from '../history/types'
 import { sideName } from '../playerLabels'
 import { formatPlayedAt } from '../history/format'
@@ -18,6 +18,9 @@ const outcomeText = computed(() => {
   return ''
 })
 
+const headingEl = ref<HTMLElement | null>(null)
+onMounted(() => headingEl.value?.focus())
+
 function confirmDelete() {
   if (confirm('删除这局历史？')) emit('delete', props.record.id)
 }
@@ -25,9 +28,9 @@ function confirmDelete() {
 
 <template>
   <div class="history-detail">
-    <h2 class="detail-title">对局详情</h2>
+    <h1 class="detail-title" ref="headingEl" tabindex="-1">对局详情</h1>
     <header class="detail-head">
-      <button type="button" @click="emit('back')">← 列表</button>
+      <button type="button" @click="emit('back')"><span aria-hidden="true">←</span> 列表</button>
       <span class="when">{{ formatPlayedAt(record.playedAt) }}</span>
       <span class="detail-outcome">{{ outcomeText }} · {{ record.digits }}位 · {{ record.rounds }}回合</span>
     </header>

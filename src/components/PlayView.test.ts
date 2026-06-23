@@ -51,4 +51,29 @@ describe('PlayView', () => {
     const w = mount(PlayView, { props: baseProps })
     expect(w.text()).toContain('1234')
   })
+
+  it('最新猜测进入 aria-live 状态区（读屏可闻）', () => {
+    const history = { p1: [{ guess: '1234', feedback: 2 }], p2: [] }
+    const w = mount(PlayView, { props: { digits: 4, current: 'p2', validate: okValidate, history } })
+    const status = w.find('[role="status"]')
+    expect(status.exists()).toBe(true)
+    expect(status.attributes('aria-live')).toBe('polite')
+    expect(status.text()).toContain('1234')
+    expect(status.text()).toContain('正确数目 2')
+  })
+
+  it('猜测记录区有可访问标题 h2', () => {
+    const w = mount(PlayView, { props: { digits: 4, current: 'p1', validate: okValidate, history: { p1: [], p2: [] } } })
+    expect(w.find('.histories h2').exists()).toBe(true)
+  })
+
+  it('双方等长时播报后手(蓝方)的最新一手', () => {
+    const history = { p1: [{ guess: '1111', feedback: 1 }], p2: [{ guess: '2222', feedback: 3 }] }
+    const w = mount(PlayView, { props: { digits: 4, current: 'p1', validate: okValidate, history } })
+    const status = w.find('[role="status"]').text()
+    expect(status).toContain('蓝方')
+    expect(status).toContain('2222')
+    expect(status).toContain('正确数目 3')
+    expect(status).not.toContain('1111')
+  })
 })
