@@ -388,4 +388,13 @@ describe('remainingCount：剩余候选数与列表', () => {
     expect(r.remaining).toBe(0)
     expect(r.candidates).toEqual([])
   })
+
+  it('边界：剩 8 个时列出（升序）、剩 9 个时不列出；覆盖 crossedOut 路径', () => {
+    const r8 = remainingCount({ digits: 1, guesses: [], assumptions: [null], crossedOut: new Set(['0-0', '0-1']) })
+    expect(r8.remaining).toBe(8)
+    expect(r8.candidates).toEqual(['2', '3', '4', '5', '6', '7', '8', '9'])
+    const r9 = remainingCount({ digits: 1, guesses: [], assumptions: [null], crossedOut: new Set(['0-0']) })
+    expect(r9.remaining).toBe(9)
+    expect(r9.candidates).toEqual([])
+  })
 })
