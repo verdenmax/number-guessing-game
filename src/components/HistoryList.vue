@@ -17,7 +17,7 @@ defineProps<{ records: GuessRecord[]; title?: string; side?: 'red' | 'blue' }>()
       <tbody>
         <tr v-for="(r, i) in records" :key="i">
           <td class="guess">{{ r.guess }}</td>
-          <td class="fb">{{ r.feedback }}</td>
+          <td class="fb-cell"><span class="fb">{{ r.feedback }}</span></td>
         </tr>
       </tbody>
     </table>
