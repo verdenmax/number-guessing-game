@@ -162,9 +162,21 @@ describe('solve', () => {
     expect(grid[0][9]).toBe('conflict')
   })
 
-  it('手动划除 → eliminated', () => {
+  it('手动划除 → crossed', () => {
     const grid = solve(baseInput({ crossedOut: new Set(['0-7']) }))
-    expect(grid[0][7]).toBe('eliminated')
+    expect(grid[0][7]).toBe('crossed')
+  })
+
+  it('手动划除(crossed)与事实排除(eliminated)区分', () => {
+    // 猜 0000 得 0 → pos0 的数字 0 被事实排除(eliminated)；同时手动划除 pos0 的数字 7(crossed)
+    const grid = solve(
+      baseInput({
+        guesses: [{ guess: '0000', feedback: 0 }],
+        crossedOut: new Set(['0-7']),
+      }),
+    )
+    expect(grid[0][0]).toBe('eliminated') // 事实排除
+    expect(grid[0][7]).toBe('crossed') // 手动划除
   })
 
   it('划除联动：划掉 pos0 除某值外所有 → 余下值 fixed', () => {
@@ -214,7 +226,7 @@ describe('solve', () => {
       crossedOut: new Set<string>(['1-5']),
     })
     expect(grid[0][5]).toBe('assumed')
-    expect(grid[1][5]).toBe('eliminated')
+    expect(grid[1][5]).toBe('crossed')
   })
 
   it('混合列：部分 available 部分 eliminated 并存', () => {
@@ -239,7 +251,7 @@ describe('solve', () => {
       assumptions: [null, null, null, null],
       crossedOut: crossed,
     })
-    expect(grid[0].every((s) => s === 'eliminated')).toBe(true)
+    expect(grid[0].every((s) => s === 'crossed')).toBe(true)
   })
 
   it('矛盾时非假设格回退到仅事实推理（不整片置灰）', () => {

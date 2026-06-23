@@ -77,13 +77,13 @@ describe('SolverPanel 交互', () => {
     expect(cells[idx5].classes()).not.toContain('assumed')
   })
 
-  it('右键格 → 切换 eliminated（手动划除）', async () => {
+  it('右键格 → 切换 crossed（手动划除）', async () => {
     const w = expand()
     await w.vm.$nextTick()
     const cells = w.findAll('.solver-cell')
     const idx = 7 * 4 + 1 // pos1 digit7
     await cells[idx].trigger('contextmenu')
-    expect(cells[idx].classes()).toContain('eliminated')
+    expect(cells[idx].classes()).toContain('crossed')
   })
 
   it('重置 → 清空假设与划除', async () => {
@@ -100,13 +100,13 @@ describe('SolverPanel 交互', () => {
     expect(after[7 * 4 + 1].classes()).toContain('available')
   })
 
-  it('Shift+左键 → 划除（eliminated）而非假设', async () => {
+  it('Shift+左键 → 划除（crossed）而非假设', async () => {
     const w = expand()
     await w.vm.$nextTick()
     const cells = w.findAll('.solver-cell')
     const idx = 5 * 4 + 0
     await cells[idx].trigger('click', { shiftKey: true })
-    expect(cells[idx].classes()).toContain('eliminated')
+    expect(cells[idx].classes()).toContain('crossed')
     expect(cells[idx].classes()).not.toContain('assumed')
   })
 
@@ -116,7 +116,7 @@ describe('SolverPanel 交互', () => {
     const cells = w.findAll('.solver-cell')
     const idx = 4 * 4 + 2
     await cells[idx].trigger('keydown', { key: 'Delete' })
-    expect(cells[idx].classes()).toContain('eliminated')
+    expect(cells[idx].classes()).toContain('crossed')
   })
 
   it('假设格 aria-pressed=true', async () => {
