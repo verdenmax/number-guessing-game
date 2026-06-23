@@ -102,4 +102,12 @@ describe('HistoryView', () => {
     expect(w.text()).toContain('历史删除失败')
     expect(w.find('.history-list').exists()).toBe(true)
   })
+
+  it('页面标题为 h1 且挂载时聚焦', () => {
+    const w = mount(HistoryView, { attachTo: document.body, props: { records: [], error: null } })
+    const h1 = w.find('h1')
+    expect(h1.text()).toContain('对局历史')
+    expect(document.activeElement).toBe(h1.element)
+    w.unmount()
+  })
 })

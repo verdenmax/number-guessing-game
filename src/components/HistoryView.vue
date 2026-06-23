@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import type { GameRecord } from '../history/types'
 import { sideName } from '../playerLabels'
 import { formatPlayedAt } from '../history/format'
@@ -13,6 +14,9 @@ const emit = defineEmits<{
   clear: []
   back: []
 }>()
+
+const headingEl = ref<HTMLElement | null>(null)
+onMounted(() => headingEl.value?.focus())
 
 function matchTitle(r: GameRecord): string {
   return `${sideName('p1', r.names)} vs ${sideName('p2', r.names)}`
@@ -33,13 +37,13 @@ function confirmClear() {
 <template>
   <div class="history-view">
     <header class="history-head">
-      <h2>对局历史</h2>
-      <div class="history-actions">
+      <h1 ref="headingEl" tabindex="-1">对局历史</h1>
+      <nav class="history-actions" aria-label="历史导航">
         <button type="button" :disabled="records.length === 0" @click="confirmClear">
-          🗑 清空历史
+          <span aria-hidden="true">🗑</span> 清空历史
         </button>
-        <button type="button" @click="emit('back')">← 返回</button>
-      </div>
+        <button type="button" @click="emit('back')"><span aria-hidden="true">←</span> 返回</button>
+      </nav>
     </header>
 
     <!-- 错误横幅与列表非互斥；空态仅在无记录且无错误时显示 -->
