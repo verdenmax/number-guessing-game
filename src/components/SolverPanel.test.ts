@@ -178,3 +178,64 @@ describe('SolverPanel what-if 集成', () => {
     expect(cells[5 * 4 + 1].classes()).toContain('eliminated')
   })
 })
+
+describe('SolverPanel 智能/基础开关', () => {
+  it('默认智能模式（solve）：构造 fixed 场景该格为 fixed', async () => {
+    const guesses = Array.from({ length: 9 }, (_, d) => ({ guess: `${d}999`, feedback: 0 }))
+    const w = mount(SolverPanel, { props: { digits: 4, guesses, side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const idx = 9 * 4 + 0 // 行优先：digit=9 行、pos0
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('fixed')
+  })
+
+  it('切到基础模式（basicSolve）：同场景该格变 available（不自动判 fixed）', async () => {
+    const guesses = Array.from({ length: 9 }, (_, d) => ({ guess: `${d}999`, feedback: 0 }))
+    const w = mount(SolverPanel, { props: { digits: 4, guesses, side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const idx = 9 * 4 + 0
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('fixed')
+
+    await w.find('.solver-mode input').setValue(false) // 关闭智能
+    await w.vm.$nextTick()
+    const cell = w.findAll('.solver-cell')[idx]
+    expect(cell.classes()).toContain('available')
+    expect(cell.classes()).not.toContain('fixed')
+  })
+
+  it('切换模式保留已有假设与划除', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    let cells = w.findAll('.solver-cell')
+    await cells[5 * 4 + 0].trigger('click') // 假设 pos0=5
+    await cells[7 * 4 + 1].trigger('contextmenu') // 划除 pos1=7
+    expect(cells[5 * 4 + 0].classes()).toContain('assumed')
+
+    await w.find('.solver-mode input').setValue(false)
+    await w.vm.$nextTick()
+    cells = w.findAll('.solver-cell')
+    expect(cells[5 * 4 + 0].classes()).toContain('assumed') // 假设保留
+    expect(cells[7 * 4 + 1].classes()).toContain('crossed') // 划除保留
+  })
+
+  it('图例随模式自适应：基础模式隐藏「确定」色块、说明文案随之变化', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    await w.find('.solver-help-btn').trigger('click') // 展开图例
+    await w.vm.$nextTick()
+
+    // 智能模式：图例含 fixed 色块 + 含「枚举」说明
+    expect(w.find('.solver-legend .solver-cell.fixed').exists()).toBe(true)
+    expect(w.find('.solver-legend').text()).toContain('枚举')
+
+    // 切基础模式
+    await w.find('.solver-mode input').setValue(false)
+    await w.vm.$nextTick()
+    expect(w.find('.solver-legend .solver-cell.fixed').exists()).toBe(false)
+    expect(w.find('.solver-legend').text()).toContain('只标排除')
+    expect(w.find('.solver-legend').text()).not.toContain('枚举')
+  })
+})

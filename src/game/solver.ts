@@ -108,3 +108,50 @@ export function solve(input: SolverInput): Grid {
   }
   return grid
 }
+
+export function basicSolve(input: SolverInput): Grid {
+  const { digits, guesses, assumptions, crossedOut } = input
+
+  const eliminated = new Set<string>()
+  // ① 反馈=0 的事实排除：该猜测每位数字在对应位置不可能
+  for (const g of guesses) {
+    if (g.feedback === 0) {
+      for (let i = 0; i < digits; i++) {
+        eliminated.add(`${i}-${Number(g.guess[i])}`)
+      }
+    }
+  }
+  // ② 已知正确(用户假设)的行/列排除：仅对有效的 0-9 假设施加
+  for (let p = 0; p < digits; p++) {
+    const d = assumptions[p]
+    if (d != null && d >= 0 && d <= 9) {
+      for (let p2 = 0; p2 < digits; p2++) {
+        if (p2 !== p) eliminated.add(`${p2}-${d}`) // 行：该数字在其它位置不可能
+      }
+      for (let d2 = 0; d2 < 10; d2++) {
+        if (d2 !== d) eliminated.add(`${p}-${d2}`) // 列：该位置其它数字不可能
+      }
+    }
+  }
+
+  const grid: Grid = []
+  for (let pos = 0; pos < digits; pos++) {
+    const col: CellState[] = []
+    for (let digit = 0; digit < 10; digit++) {
+      const key = `${pos}-${digit}`
+      let state: CellState
+      if (assumptions[pos] === digit) {
+        state = eliminated.has(key) ? 'conflict' : 'assumed'
+      } else if (crossedOut.has(key)) {
+        state = 'crossed'
+      } else if (eliminated.has(key)) {
+        state = 'eliminated'
+      } else {
+        state = 'available'
+      }
+      col.push(state)
+    }
+    grid.push(col)
+  }
+  return grid
+}

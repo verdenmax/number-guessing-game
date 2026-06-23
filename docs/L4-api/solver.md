@@ -14,13 +14,15 @@ filterByFacts(candidates: string[], guesses: GuessRecord[]): string[]
 // 复用 engine.feedback，保留对每条猜测记录都吻合的候选。
 
 solve(input: SolverInput): Grid
-// 逐格状态推导：候选 → 事实过滤 → what-if（假设/划除）→ 每格五状态。
+// 逐格状态推导：候选 → 事实过滤 → what-if（假设/划除）→ 每格六状态。
+basicSolve(input: SolverInput): Grid
+// 基础模式：只排除（反馈=0 + 假设格行/列），不产生 fixed；与 solve 同签名可互换。
 ```
 
 ## 类型定义
 
 ```typescript
-export type CellState = 'available' | 'eliminated' | 'fixed' | 'assumed' | 'conflict'
+export type CellState = 'available' | 'eliminated' | 'crossed' | 'fixed' | 'assumed' | 'conflict'
 
 export interface SolverInput {
   digits: number
@@ -37,7 +39,8 @@ export type Grid = CellState[][]    // grid[pos][digit]，digits 列 × 10 行
 | 状态 | 含义 | 视觉 |
 |------|------|------|
 | `available` | 仍可能（默认） | 普通 |
-| `eliminated` | 被排除：事实无此 / 手动划除 / 联动排除 | 灰 |
+| `eliminated` | 被排除：事实无此 / 联动排除 | 灰 |
+| `crossed` | 手动划除（右键 / Shift+左键 / Delete），仅标记、不参与推理 | 琥珀虚线 |
 | `fixed` | 该列 what-if 只剩这一个数字（自动确定） | 绿 |
 | `assumed` | 用户假设且成立 | 高亮 |
 | `conflict` | 用户假设但与现有约束矛盾 | 红 |
@@ -128,7 +131,7 @@ whatifEmpty = whatif 为空
 if assumptions[pos] === digit:
     state = (posDigitOK && !whatifEmpty) ? 'assumed' : 'conflict'
 elif crossedOut.has(`${pos}-${digit}`):
-    state = 'eliminated'
+    state = 'crossed'
 elif !factHasIt:
     state = 'eliminated'        // 事实排除
 elif colOnlyThis:
@@ -139,7 +142,7 @@ else:
     state = 'available'
 ```
 
-> 注意优先级：**该格是否为本列假设值** 最优先，因此被假设的格永远显示 `assumed` 或 `conflict`，不会被判成 `fixed`/`eliminated`。
+> 注意优先级：**该格是否为本列假设值** 最优先，因此被假设的格永远显示 `assumed` 或 `conflict`，不会被判成 `crossed`/`fixed`/`eliminated`。
 
 ### 健壮性
 
@@ -158,3 +161,33 @@ solve({ digits: 4,
 ```
 
 更多推导示例与流程图见 [L3 推理引擎细节](../L3-details/solver.md)。
+
+## `basicSolve(input)`
+
+| | |
+|---|---|
+| **签名** | `basicSolve(input: SolverInput): Grid` |
+| **返回** | `Grid` —— 与 `solve` 同构的 `CellState` 二维数组；**与 `solve` 同签名可互换** |
+
+基础模式只做「排除」，**绝不自动判 `fixed`**。先构造排除集 `eliminated`，再逐格按优先级定状态。
+
+### 排除集来源
+
+1. **规则①（反馈=0）**：对每条 `feedback === 0` 的猜测，其每一位 `i` 的数字加入排除键 `` `${i}-${Number(guess[i])}` ``。
+2. **规则②（假设的行/列）**：对每个**有效**假设位 `(p, d)`（`d != null && d >= 0 && d <= 9`）：同一数字 `d` 在**其它每个位置**（行排除 `` `${p2}-${d}` ``, `p2 !== p`）、同一位置 `p` 的**其它每个数字**（列排除 `` `${p}-${d2}` ``, `d2 !== d`）都加入排除集；不排除假设格自身。
+
+### 每格状态推导（与源码一致，假设优先，与 `solve` 对齐）
+
+```text
+key = `${pos}-${digit}`
+if assumptions[pos] === digit:
+    state = eliminated.has(key) ? 'conflict' : 'assumed'
+elif crossedOut.has(key):
+    state = 'crossed'
+elif eliminated.has(key):
+    state = 'eliminated'
+else:
+    state = 'available'
+```
+
+> 优先级与 `solve` 一致：**假设最优先**，故被假设的格只会是 `assumed`/`conflict`，且手动划除不会掩盖矛盾。基础模式**永不产生 `fixed`**。

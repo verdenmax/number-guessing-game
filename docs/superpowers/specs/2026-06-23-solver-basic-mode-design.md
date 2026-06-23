@@ -57,11 +57,12 @@ src/components/SolverPanel.vue
         列：对每个 d' ≠ d (0..9)：eliminated.add(`${p}-${d'}`)
    注意：假设格自身 `${p}-${d}` 不被自己的行/列规则加入
 
-2) 逐格定状态 cell [p][d]（d=0..9）：
+2) 逐格定状态 cell [p][d]（d=0..9）：**优先级与智能 `solve` 一致（假设优先于划除）**，
+   保证切换模式时同一手动标记渲染一致、划除不会掩盖矛盾：
      key = `${p}-${d}`
-     if crossedOut.has(key):                      state = 'crossed'
-     elif assumptions[p] === d:                    // 该格被假设为正确
+     if assumptions[p] === d:                      // 该格被假设为正确
         state = eliminated.has(key) ? 'conflict' : 'assumed'
+     elif crossedOut.has(key):                     state = 'crossed'
      elif eliminated.has(key):                     state = 'eliminated'
      else:                                         state = 'available'
    （绝不产生 'fixed'）
