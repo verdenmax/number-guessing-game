@@ -79,4 +79,13 @@ describe('SetupView', () => {
     const w = mount(SetupView, { props: { digits: 4, validate: okValidate, names: { p1: '红哥', p2: '蓝妹' } } })
     expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('红哥')
   })
+
+  it('换数字再战：蓝方一步也预填昵称', async () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate, names: { p1: '红哥', p2: '蓝妹' } } })
+    w.findComponent(SecretInput).vm.$emit('confirm', '1234')
+    await w.vm.$nextTick()
+    w.findComponent(HandoffScreen).vm.$emit('continue')
+    await w.vm.$nextTick()
+    expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('蓝妹')
+  })
 })
