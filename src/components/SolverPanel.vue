@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { GuessRecord } from '../game/types'
-import { solve } from '../game/solver'
+import { solve, type CellState } from '../game/solver'
 
 const props = defineProps<{
   digits: number
@@ -24,6 +24,15 @@ const grid = computed(() =>
 )
 
 const sideName = computed(() => (props.side === 'red' ? '红方' : '蓝方'))
+
+const stateLabel: Record<CellState, string> = {
+  available: '可用',
+  eliminated: '已排除',
+  crossed: '已划除',
+  fixed: '确定',
+  assumed: '已假设',
+  conflict: '矛盾',
+}
 
 function toggleAssumption(pos: number, digit: number) {
   const next = assumptions.value.slice()
@@ -89,7 +98,7 @@ function reset() {
             type="button"
             class="solver-cell"
             :class="grid[pos - 1][digit - 1]"
-            :aria-label="`位${pos} 数字${digit - 1} ${grid[pos - 1][digit - 1]}`"
+            :aria-label="`位${pos} 数字${digit - 1} ${stateLabel[grid[pos - 1][digit - 1]]}`"
             :aria-pressed="grid[pos - 1][digit - 1] === 'assumed'"
             @click="onCellClick($event, pos - 1, digit - 1)"
             @contextmenu.prevent="toggleCrossOut(pos - 1, digit - 1)"

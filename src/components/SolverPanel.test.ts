@@ -57,6 +57,17 @@ describe('SolverPanel 交互', () => {
     expect(w.find('.solver-legend').exists()).toBe(false)
   })
 
+  it('格子 aria-label 用中文状态名（无障碍）', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    const cells = w.findAll('.solver-cell')
+    const idx = 7 * 4 + 1
+    await cells[idx].trigger('contextmenu') // 划除 → crossed
+    const label = cells[idx].attributes('aria-label') ?? ''
+    expect(label).toContain('已划除')
+    expect(label).not.toContain('crossed')
+  })
+
   it('左键点格 → 该格变 assumed', async () => {
     const w = expand()
     await w.vm.$nextTick()
