@@ -1,9 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SolverPanel from './SolverPanel.vue'
 import type { GuessRecord } from '../game/types'
+import { useInteractionMode } from '../composables/useInteractionMode'
 
 const noGuesses: GuessRecord[] = []
+
+beforeEach(() => {
+  localStorage.clear()
+  useInteractionMode().value = 'menu' // 单例：每个用例从默认菜单模式开始
+})
 
 async function open(w: ReturnType<typeof mount>, cellIdx: number) {
   await w.findAll('.solver-cell')[cellIdx].trigger('click')
@@ -368,5 +374,150 @@ describe('SolverPanel 图例与语义（事实/假设确定、地标、aria）',
     expect(txt).not.toContain('Shift')
     expect(txt).not.toContain('Delete')
     expect(txt).toContain('菜单')
+  })
+})
+
+describe('SolverPanel 交互方式开关（菜单/右键快捷）', () => {
+  function expand() {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    w.find('.solver-toggle').trigger('click')
+    return w
+  }
+  async function setGesture(w: ReturnType<typeof mount>, on: boolean) {
+    await w.find('.solver-imode input').setValue(on)
+    await w.vm.$nextTick()
+  }
+
+  it('勾选「右键快捷」→ 左键点格直接假设（不弹菜单）', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await setGesture(w, true)
+    await w.findAll('.solver-cell')[5 * 4 + 0].trigger('click')
+    expect(w.find('.solver-menu').exists()).toBe(false)
+    expect(w.findAll('.solver-cell')[5 * 4 + 0].classes()).toContain('assumed')
+  })
+
+  it('快捷模式：右键划除 + 再次取消 + Shift+左键划除 + Delete 划除', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await setGesture(w, true)
+    const idx = 7 * 4 + 1
+    await w.findAll('.solver-cell')[idx].trigger('contextmenu')
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('crossed')
+    await w.findAll('.solver-cell')[idx].trigger('contextmenu')
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('available')
+    await w.findAll('.solver-cell')[idx].trigger('click', { shiftKey: true })
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('crossed')
+    const idx2 = 4 * 4 + 2
+    await w.findAll('.solver-cell')[idx2].trigger('keydown', { key: 'Delete' })
+    expect(w.findAll('.solver-cell')[idx2].classes()).toContain('crossed')
+  })
+
+  it('快捷模式：同列替换假设、再点同格取消', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await setGesture(w, true)
+    await w.findAll('.solver-cell')[5 * 4 + 0].trigger('click')
+    await w.findAll('.solver-cell')[3 * 4 + 0].trigger('click')
+    expect(w.findAll('.solver-cell')[3 * 4 + 0].classes()).toContain('assumed')
+    expect(w.findAll('.solver-cell')[5 * 4 + 0].classes()).not.toContain('assumed')
+    await w.findAll('.solver-cell')[3 * 4 + 0].trigger('click')
+    expect(w.findAll('.solver-cell')[3 * 4 + 0].classes()).toContain('available')
+  })
+
+  it('默认菜单模式不变：点格弹菜单', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await w.findAll('.solver-cell')[5 * 4 + 0].trigger('click')
+    expect(w.find('.solver-menu').exists()).toBe(true)
+  })
+
+  it('全局共享：一侧勾选，另一侧勾选框也变 checked', async () => {
+    const red = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    const blue = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'blue' } })
+    await red.find('.solver-toggle').trigger('click')
+    await blue.find('.solver-toggle').trigger('click')
+    await red.vm.$nextTick()
+    await blue.vm.$nextTick()
+    await red.find('.solver-imode input').setValue(true)
+    await blue.vm.$nextTick()
+    expect((blue.find('.solver-imode input').element as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('切到快捷模式时关闭已打开的菜单', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await w.findAll('.solver-cell')[5 * 4 + 0].trigger('click')
+    expect(w.find('.solver-menu').exists()).toBe(true)
+    await setGesture(w, true)
+    expect(w.find('.solver-menu').exists()).toBe(false)
+  })
+
+  it('legend-ops 文案随模式变化', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await w.find('.solver-help-btn').trigger('click')
+    await w.vm.$nextTick()
+    expect(w.find('.legend-ops').text()).toContain('菜单')
+    await setGesture(w, true)
+    expect(w.find('.legend-ops').text()).toContain('右键')
+  })
+
+  it('格子 aria 随模式自适应：菜单有 haspopup，快捷无并加动作提示', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    const cell = () => w.findAll('.solver-cell')[5 * 4 + 0]
+    expect(cell().attributes('aria-haspopup')).toBe('menu')
+    await setGesture(w, true)
+    expect(cell().attributes('aria-haspopup')).toBeUndefined()
+    expect(cell().attributes('aria-label')).toContain('左键假设')
+  })
+
+  it('B2 菜单视口夹取：靠右靠下单元格不溢出', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const cell = w.findAll('.solver-cell')[5 * 4 + 3] // 最右列
+    vi.spyOn(cell.element, 'getBoundingClientRect').mockReturnValue({
+      left: 1000, right: 1040, top: 700, bottom: 740, width: 40, height: 40, x: 1000, y: 700,
+      toJSON: () => ({}),
+    } as DOMRect)
+    await cell.trigger('click')
+    const style = (w.find('.solver-menu').element as HTMLElement).style
+    const left = parseFloat(style.left)
+    const top = parseFloat(style.top)
+    expect(left).toBeLessThanOrEqual(window.innerWidth - 120 - 8 + 0.5) // 不溢出右
+    expect(top + 132).toBeLessThanOrEqual(window.innerHeight + 0.5) // 不溢出下（必要时上弹）
+    expect(left).toBeGreaterThanOrEqual(8)
+    expect(top).toBeGreaterThanOrEqual(8)
+    expect(top).toBeLessThanOrEqual(700) // 上弹：菜单顶在格子上方（r.top=700）
+  })
+
+  it('B2 普通格子：留有空间时位置不变（不过度夹取）', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const cell = w.findAll('.solver-cell')[2 * 4 + 1] // 居中格
+    vi.spyOn(cell.element, 'getBoundingClientRect').mockReturnValue({
+      left: 200, right: 240, top: 120, bottom: 160, width: 40, height: 40, x: 200, y: 120,
+      toJSON: () => ({}),
+    } as DOMRect)
+    await cell.trigger('click')
+    const style = (w.find('.solver-menu').element as HTMLElement).style
+    expect(parseFloat(style.left)).toBe(200) // = r.left（未夹取）
+    expect(parseFloat(style.top)).toBe(160) // = r.bottom（下方有空间，不上弹）
+  })
+
+  it('B2 靠左：left 不小于 pad（下界夹取）', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    const cell = w.findAll('.solver-cell')[2 * 4 + 0]
+    vi.spyOn(cell.element, 'getBoundingClientRect').mockReturnValue({
+      left: -50, right: -10, top: 120, bottom: 160, width: 40, height: 40, x: -50, y: 120,
+      toJSON: () => ({}),
+    } as DOMRect)
+    await cell.trigger('click')
+    expect(parseFloat((w.find('.solver-menu').element as HTMLElement).style.left)).toBe(8)
   })
 })

@@ -99,6 +99,7 @@ const activeSide = computed(() => {
             :current="current"
             :validate="checkGuess"
             :history="state.history"
+            :names="names"
             @guess="applyGuess"
           />
 

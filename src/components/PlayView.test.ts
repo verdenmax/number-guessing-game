@@ -76,4 +76,22 @@ describe('PlayView', () => {
     expect(status).toContain('正确数目 3')
     expect(status).not.toContain('1111')
   })
+
+  it('对局中显示昵称（轮次标签/历史标题/播报）', () => {
+    const history = { p1: [{ guess: '1234', feedback: 2 }], p2: [] }
+    const names = { p1: 'Alice', p2: 'Bob' }
+    const w = mount(PlayView, { props: { digits: 4, current: 'p1', validate: okValidate, history, names } })
+    expect(w.text()).toContain('Alice') // 轮次标签 + p1 历史标题
+    expect(w.text()).toContain('Bob') // p2 历史标题
+    expect(w.text()).not.toContain('红方') // 已被昵称替代
+    expect(w.text()).not.toContain('蓝方')
+    // 读屏播报区单独断言用昵称
+    expect(w.find('[role="status"]').text()).toContain('Alice 猜 1234')
+  })
+
+  it('不传 names 时回退红/蓝方', () => {
+    const w = mount(PlayView, { props: { digits: 4, current: 'p1', validate: okValidate, history: { p1: [], p2: [] } } })
+    expect(w.text()).toContain('红方')
+    expect(w.text()).toContain('蓝方')
+  })
 })

@@ -10,6 +10,7 @@ const props = defineProps<{
   current: PlayerId
   validate: (value: string) => ValidationResult
   history: { p1: GuessRecord[]; p2: GuessRecord[] }
+  names?: { p1: string | null; p2: string | null }
 }>()
 const emit = defineEmits<{ guess: [value: string] }>()
 
@@ -21,7 +22,7 @@ const announceText = computed(() => {
   const { p1, p2 } = props.history
   const last = p1.length > p2.length ? { who: 'p1' as const, r: p1[p1.length - 1] } : p2.length ? { who: 'p2' as const, r: p2[p2.length - 1] } : null
   if (!last) return ''
-  return `${sideName(last.who)} 猜 ${last.r.guess}，正确数目 ${last.r.feedback}`
+  return `${sideName(last.who, props.names)} 猜 ${last.r.guess}，正确数目 ${last.r.feedback}`
 })
 </script>
 
@@ -32,13 +33,13 @@ const announceText = computed(() => {
       :key="current"
       :digits="digits"
       :validate="validate"
-      :label="`${sideName(current)}输入`"
+      :label="`${sideName(current, names)}输入`"
       @confirm="onGuess"
     />
     <section class="histories" aria-labelledby="play-hist-h">
       <h2 id="play-hist-h" class="visually-hidden">猜测记录</h2>
-      <HistoryList :records="history.p1" title="红方" side="red" />
-      <HistoryList :records="history.p2" title="蓝方" side="blue" />
+      <HistoryList :records="history.p1" :title="sideName('p1', names)" side="red" />
+      <HistoryList :records="history.p2" :title="sideName('p2', names)" side="blue" />
     </section>
   </div>
 </template>
