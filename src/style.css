@@ -376,12 +376,6 @@ button:disabled {
   min-width: 180px;
 }
 
-.result > button {
-  width: 100%;
-  padding: 15px 18px;
-  font-size: 1.05rem;
-}
-
 /* ---------- Responsive ---------- */
 @media (max-width: 480px) {
   body {

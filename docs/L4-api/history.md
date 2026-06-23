@@ -28,7 +28,6 @@ interface GameRecord {
 ```typescript
 saveGame(record: GameRecord): Promise<void>            // put（同 id 覆盖）
 listGames(): Promise<GameRecord[]>                     // 按 playedAt 倒序（最新在前）
-getGame(id: string): Promise<GameRecord | undefined>   // 查无返回 undefined
 deleteGame(id: string): Promise<void>                  // 删不存在的 id = no-op
 clearAll(): Promise<void>                              // 清空整个 games 仓库
 ```

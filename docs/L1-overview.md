@@ -108,7 +108,7 @@ over --再来一局--> setup_红
 |-------------|------|
 | `src/game/` | **纯逻辑引擎（零 Vue）**：`types.ts` 类型、`validate.ts` 校验、`engine.ts` 算提示与状态机、`solver.ts` 推理引擎（枚举·事实过滤·what-if·逐格状态，仅复用 `engine.feedback`）。可被 Vitest 独立穷尽测试。 |
 | `src/composables/` | `useGame.ts` 把引擎接入 Vue 响应式；`useHistory.ts` 把历史存储接入响应式（`records`/`error` + `load`/`remove`/`clear`）。 |
-| `src/history/` | **本地对局历史（纯前端，零 Vue / 与引擎解耦）**：`types.ts` 记录结构、`store.ts` IndexedDB 封装（save/list/get/delete/clear）、`record.ts` 从 `GameState` 组装记录。每局结束自动存档，可选昵称，详见 [L2 历史](./L2-components/history.md)。 |
+| `src/history/` | **本地对局历史（纯前端，零 Vue / 与引擎解耦）**：`types.ts` 记录结构、`store.ts` IndexedDB 封装（save/list/delete/clear）、`record.ts` 从 `GameState` 组装记录。每局结束自动存档，可选昵称，详见 [L2 历史](./L2-components/history.md)。 |
 | `src/components/` | UI 组件：`App.vue` 之下的 `SetupView / SecretInput / PlayView / GuessInput / HistoryList / HandoffScreen / ResultView`、历史视图 `HistoryView / HistoryDetail`，以及推理助手 `SolverPanel`（红蓝各一）。 |
 | `src/App.vue` `src/main.ts` | 应用根：`App.vue` 依 `phase` 渲染三视图；`main.ts` 挂载到 `#app`。 |
 | `docs/` | 分层文档 L1–L4（本目录）与设计 spec（`docs/superpowers/`）。 |

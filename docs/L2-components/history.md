@@ -9,7 +9,7 @@
 | 单元 | 文件 | 职责 |
 |------|------|------|
 | 数据类型 | `src/history/types.ts` | `GameRecord` 结构（含双方昵称 / 秘密 / 双历史 / 结局） |
-| 存储层 | `src/history/store.ts` | IndexedDB 封装：`saveGame` / `listGames` / `getGame` / `deleteGame` / `clearAll` |
+| 存储层 | `src/history/store.ts` | IndexedDB 封装：`saveGame` / `listGames` / `deleteGame` / `clearAll` |
 | 记录组装 | `src/history/record.ts` | 纯函数 `buildGameRecord` + `newId`（从 `GameState` 组装一条记录） |
 | 响应式封装 | `src/composables/useHistory.ts` | `records` / `error` + `load` / `remove` / `clear` |
 | 列表视图 | `src/components/HistoryView.vue` | 展示列表（props 进、事件出，含删除/清空确认） |

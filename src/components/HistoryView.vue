@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { GameRecord } from '../history/types'
 import { sideName } from '../playerLabels'
+import { formatPlayedAt } from '../history/format'
 
 defineProps<{
   records: GameRecord[]
@@ -20,9 +21,6 @@ function outcomeText(r: GameRecord): string {
   if (r.outcome.kind === 'draw') return '平局'
   if (r.outcome.kind === 'win') return `${sideName(r.outcome.winner, r.names)} 胜`
   return ''
-}
-function fmtTime(ms: number): string {
-  return new Date(ms).toLocaleString()
 }
 function confirmRemove(id: string) {
   if (confirm('删除这局历史？')) emit('remove', id)
@@ -51,7 +49,7 @@ function confirmClear() {
     <ul v-if="records.length" class="history-list">
       <li v-for="r in records" :key="r.id" class="history-row">
         <button type="button" class="row-main" @click="emit('open', r)">
-          <span class="when">{{ fmtTime(r.playedAt) }}</span>
+          <span class="when">{{ formatPlayedAt(r.playedAt) }}</span>
           <span class="match">{{ matchTitle(r) }}</span>
           <span class="row-outcome">{{ outcomeText(r) }}</span>
           <span class="meta">{{ r.digits }}位 · {{ r.rounds }}回合</span>

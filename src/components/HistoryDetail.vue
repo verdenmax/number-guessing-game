@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { GameRecord } from '../history/types'
 import { sideName } from '../playerLabels'
+import { formatPlayedAt } from '../history/format'
 import HistoryList from './HistoryList.vue'
 
 const props = defineProps<{ record: GameRecord }>()
@@ -16,7 +17,6 @@ const outcomeText = computed(() => {
   if (o.kind === 'win') return `${sideName(o.winner, props.record.names)} 胜`
   return ''
 })
-const fmtTime = computed(() => new Date(props.record.playedAt).toLocaleString())
 
 function confirmDelete() {
   if (confirm('删除这局历史？')) emit('delete', props.record.id)
@@ -28,7 +28,7 @@ function confirmDelete() {
     <h2 class="detail-title">对局详情</h2>
     <header class="detail-head">
       <button type="button" @click="emit('back')">← 列表</button>
-      <span class="when">{{ fmtTime }}</span>
+      <span class="when">{{ formatPlayedAt(record.playedAt) }}</span>
       <span class="detail-outcome">{{ outcomeText }} · {{ record.digits }}位 · {{ record.rounds }}回合</span>
     </header>
 

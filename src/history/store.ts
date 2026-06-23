@@ -78,17 +78,6 @@ export async function clearAll(): Promise<void> {
   })
 }
 
-export async function getGame(id: string): Promise<GameRecord | undefined> {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readonly')
-    const req = tx.objectStore(STORE).get(id)
-    req.onsuccess = () => resolve(req.result as GameRecord | undefined)
-    req.onerror = () => reject(req.error ?? new Error('getGame failed'))
-    tx.onabort = () => reject(tx.error ?? new Error('getGame aborted'))
-  })
-}
-
 export async function deleteGame(id: string): Promise<void> {
   const db = await openDB()
   return new Promise((resolve, reject) => {
