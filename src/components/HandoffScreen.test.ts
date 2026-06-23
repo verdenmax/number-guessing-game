@@ -14,4 +14,11 @@ describe('HandoffScreen', () => {
     await w.find('button').trigger('click')
     expect(w.emitted('continue')).toBeTruthy()
   })
+
+  it('继续按钮 aria-describedby 关联提示信息（聚焦时一并播报）', () => {
+    const w = mount(HandoffScreen, { props: { message: '请把电脑交给蓝方' } })
+    const id = w.find('button').attributes('aria-describedby')
+    expect(id).toBeTruthy()
+    expect(w.find('p.message').attributes('id')).toBe(id)
+  })
 })
