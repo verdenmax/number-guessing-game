@@ -42,6 +42,25 @@ describe('App 整合', () => {
     expect(w.findComponent(SetupView).exists()).toBe(true)
   })
 
+  it('换数字再战保留昵称（再战时昵称预填）', async () => {
+    const w = mount(App)
+    const sv = w.findComponent(SetupView)
+    sv.vm.$emit('setName', 'p1', '红哥')
+    sv.vm.$emit('setName', 'p2', '蓝妹')
+    sv.vm.$emit('setSecret', 'p1', '1234')
+    sv.vm.$emit('setSecret', 'p2', '5678')
+    await w.vm.$nextTick()
+    w.findComponent(PlayView).vm.$emit('guess', '5678')
+    await w.vm.$nextTick()
+    w.findComponent(PlayView).vm.$emit('guess', '0000')
+    await w.vm.$nextTick()
+    expect(w.findComponent(ResultView).text()).toContain('红哥')
+    w.findComponent(ResultView).vm.$emit('playAgain')
+    await w.vm.$nextTick()
+    expect(w.findComponent(SetupView).exists()).toBe(true)
+    expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('红哥')
+  })
+
   it('playing 阶段渲染左右两个 SolverPanel', async () => {
     const w = mount(App)
     w.findComponent(SetupView).vm.$emit('setSecret', 'p1', '1234')

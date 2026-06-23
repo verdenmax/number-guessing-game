@@ -74,4 +74,9 @@ describe('SetupView', () => {
     expect(fs2.exists()).toBe(true)
     expect(fs2.find('legend').text()).toContain('蓝方')
   })
+
+  it('换数字再战：用 names 预填红方昵称框', () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate, names: { p1: '红哥', p2: '蓝妹' } } })
+    expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('红哥')
+  })
 })

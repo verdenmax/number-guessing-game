@@ -40,8 +40,7 @@ watch(phase, async (p) => {
 })
 
 function playAgain() {
-  reset()
-  names.value = { p1: null, p2: null }
+  reset() // 重置秘密数/历史/回合/outcome，回到 setup；保留 names
   saved.value = false
   saveStatus.value = 'saving'
 }
@@ -89,6 +88,7 @@ const activeSide = computed(() => {
             v-if="phase === 'setup'"
             :digits="config.digits"
             :validate="checkSecret"
+            :names="names"
             @set-secret="applySecret"
             @set-name="applyName"
           />

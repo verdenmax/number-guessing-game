@@ -4,9 +4,10 @@ import type { PlayerId, ValidationResult } from '../game/types'
 import SecretInput from './SecretInput.vue'
 import HandoffScreen from './HandoffScreen.vue'
 
-defineProps<{
+const props = defineProps<{
   digits: number
   validate: (value: string) => ValidationResult
+  names?: { p1: string | null; p2: string | null }
 }>()
 const emit = defineEmits<{
   setSecret: [player: PlayerId, value: string]
@@ -15,8 +16,8 @@ const emit = defineEmits<{
 
 type Step = 'p1' | 'handoff' | 'p2'
 const step = ref<Step>('p1')
-const p1Name = ref('')
-const p2Name = ref('')
+const p1Name = ref(props.names?.p1 ?? '')
+const p2Name = ref(props.names?.p2 ?? '')
 
 function confirmP1(value: string) {
   emit('setName', 'p1', p1Name.value)
