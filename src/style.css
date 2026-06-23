@@ -516,11 +516,20 @@ button:disabled {
 }
 
 .solver-cell.eliminated {
-  background: #eaecf0;
+  background: #dfe2e8;
   color: #4b5563;
-  text-decoration: line-through;
-  text-decoration-color: #374151;
-  text-decoration-thickness: 2px;
+}
+.solver-cell.eliminated::after {
+  content: '';
+  position: absolute;
+  left: 24%;
+  right: 24%;
+  top: 48%;
+  height: 2.5px;
+  transform: translateY(-50%);
+  background: #374151;
+  border-radius: 2px;
+  pointer-events: none;
 }
 
 /* 手动划除（点击格子→菜单「划除」）：你的"假设错误"标记。
