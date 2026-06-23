@@ -59,4 +59,11 @@ describe('SetupView', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.emitted('setName')![0]).toEqual(['p1', ''])
   })
+
+  it('两步各为带 legend 的 fieldset 分组', async () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate } })
+    const fs1 = w.find('fieldset.setup-step')
+    expect(fs1.exists()).toBe(true)
+    expect(fs1.find('legend').text()).toContain('红方')
+  })
 })

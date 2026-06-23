@@ -30,7 +30,8 @@ function confirmP2(value: string) {
 </script>
 
 <template>
-  <div v-if="step === 'p1'" class="setup-step">
+  <fieldset v-if="step === 'p1'" class="setup-step">
+    <legend>红方设置</legend>
     <label class="name-field">
       你的名字（可选，留空用红方）
       <input v-model="p1Name" type="text" maxlength="12" placeholder="红方" />
@@ -41,13 +42,14 @@ function confirmP2(value: string) {
       label="红方：秘密设置你的数字（蓝方请勿看屏幕）"
       @confirm="confirmP1"
     />
-  </div>
+  </fieldset>
   <HandoffScreen
     v-else-if="step === 'handoff'"
     message="请把电脑交给蓝方，准备好后点击开始"
     @continue="step = 'p2'"
   />
-  <div v-else class="setup-step">
+  <fieldset v-else class="setup-step">
+    <legend>蓝方设置</legend>
     <label class="name-field">
       你的名字（可选，留空用蓝方）
       <input v-model="p2Name" type="text" maxlength="12" placeholder="蓝方" />
@@ -58,5 +60,5 @@ function confirmP2(value: string) {
       label="蓝方：秘密设置你的数字（红方请勿看屏幕）"
       @confirm="confirmP2"
     />
-  </div>
+  </fieldset>
 </template>

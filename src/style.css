@@ -682,6 +682,17 @@ button:disabled {
   flex-direction: column;
   gap: 12px;
 }
+.setup-step {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+.setup-step > legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
 .name-field {
   display: flex;
   flex-direction: column;
