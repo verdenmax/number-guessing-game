@@ -48,7 +48,6 @@ describe('ResultView', () => {
         secrets: { p1: '1234', p2: '5678' },
         history: emptyHistory,
         names: { p1: 'Alice', p2: 'Bob' },
-        saveError: null,
       },
     })
     expect(w.text()).toContain('Alice获胜')
@@ -56,21 +55,17 @@ describe('ResultView', () => {
     expect(w.text()).toContain('Bob的数字：5678')
   })
 
-  it('默认显示已保存提示；saveError 时显示错误', () => {
+  it('保存状态：saving→保存中、saved→已保存、error→失败', () => {
     const outcome: Outcome = { kind: 'draw' }
-    const ok = mount(ResultView, {
-      props: { outcome, secrets: { p1: '1', p2: '2' }, history: emptyHistory, saveError: null },
-    })
-    expect(ok.text()).toContain('已保存到历史')
+    const base = { outcome, secrets: { p1: '1', p2: '2' }, history: emptyHistory }
 
-    const fail = mount(ResultView, {
-      props: {
-        outcome,
-        secrets: { p1: '1', p2: '2' },
-        history: emptyHistory,
-        saveError: '历史保存失败',
-      },
-    })
+    const saving = mount(ResultView, { props: { ...base, saveStatus: 'saving' as const } })
+    expect(saving.text()).toContain('正在保存')
+
+    const saved = mount(ResultView, { props: { ...base, saveStatus: 'saved' as const } })
+    expect(saved.text()).toContain('已保存到历史')
+
+    const fail = mount(ResultView, { props: { ...base, saveStatus: 'error' as const } })
     expect(fail.text()).toContain('历史保存失败')
     expect(fail.text()).not.toContain('已保存到历史')
   })

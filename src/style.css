@@ -827,6 +827,9 @@ button:disabled {
   color: #15803d;
   font-size: 0.9rem;
 }
+.saved-hint.saving {
+  color: var(--text-muted);
+}
 .result-actions {
   display: flex;
   gap: 12px;

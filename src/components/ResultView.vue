@@ -9,7 +9,7 @@ const props = defineProps<{
   secrets: { p1: string | null; p2: string | null }
   history: { p1: GuessRecord[]; p2: GuessRecord[] }
   names?: { p1: string | null; p2: string | null }
-  saveError?: string | null
+  saveStatus?: 'saving' | 'saved' | 'error'
 }>()
 const emit = defineEmits<{ playAgain: []; viewHistory: [] }>()
 
@@ -27,8 +27,11 @@ const resultText = computed(() => {
   <div class="result">
     <h2>{{ resultText }}</h2>
     <p class="reveal">{{ p1Name }}的数字：{{ secrets.p1 }}　{{ p2Name }}的数字：{{ secrets.p2 }}</p>
-    <p v-if="saveError" class="error" role="alert">{{ saveError }}</p>
-    <p v-else class="saved-hint">✅ 本局已保存到历史</p>
+    <p v-if="saveStatus === 'saving'" class="saved-hint saving">💾 正在保存…</p>
+    <p v-else-if="saveStatus === 'error'" class="error" role="alert">
+      ⚠️ 历史保存失败（可能是浏览器隐私模式）
+    </p>
+    <p v-else-if="saveStatus === 'saved'" class="saved-hint">✅ 本局已保存到历史</p>
     <div class="histories">
       <HistoryList :records="history.p1" :title="p1Name" side="red" />
       <HistoryList :records="history.p2" :title="p2Name" side="blue" />

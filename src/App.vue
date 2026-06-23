@@ -24,16 +24,17 @@ const applyName = (p: PlayerId, n: string) => {
 }
 
 const saved = ref(false)
-const saveError = ref<string | null>(null)
+const saveStatus = ref<'saving' | 'saved' | 'error'>('saving')
 
 watch(phase, async (p) => {
   if (p === 'over' && !saved.value) {
     saved.value = true
-    saveError.value = null
+    saveStatus.value = 'saving'
     try {
       await saveGame(buildGameRecord(state.value, names.value))
+      saveStatus.value = 'saved'
     } catch {
-      saveError.value = '历史保存失败（可能是浏览器隐私模式）'
+      saveStatus.value = 'error'
     }
   }
 })
@@ -42,7 +43,7 @@ function playAgain() {
   reset()
   names.value = { p1: null, p2: null }
   saved.value = false
-  saveError.value = null
+  saveStatus.value = 'saving'
 }
 
 const view = ref<'game' | 'history'>('game')
@@ -110,7 +111,7 @@ const activeSide = computed(() => {
             :secrets="state.secrets"
             :history="state.history"
             :names="names"
-            :save-error="saveError"
+            :save-status="saveStatus"
             @play-again="playAgain"
             @view-history="openHistory"
           />
