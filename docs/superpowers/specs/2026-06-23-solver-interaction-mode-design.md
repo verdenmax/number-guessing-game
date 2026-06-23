@@ -87,3 +87,16 @@
 ## 9. 验收
 
 鼠标用户勾选「🖱 右键快捷」后：左键假设、右键/Shift/Delete 划除、再点取消，与旧版手感一致；刷新后仍是快捷模式；红蓝两侧同步。默认（未勾选）仍是点击菜单、触屏/键盘可用。现有 249 测试 + 新增用例全绿，构建干净，线上生效。
+
+## 10. 附带修复（本次一并做，来自优化审查）
+
+**B1 — 昵称接入对局页（Med-High bug）**：当前 `App.vue` 没把 `:names` 传给 `PlayView`，导致猜测页轮次标签、两列历史标题、读屏播报都用「红方/蓝方」而非昵称。
+- `App.vue`：给 `<PlayView>` 加 `:names="names"`。
+- `PlayView.vue`：新增 `names?: { p1: string|null; p2: string|null }` prop；输入标签用 `sideName(current, names)`；两列 `<HistoryList>` 的 `title` 用 `sideName('p1', names)` / `sideName('p2', names)`（替代硬编码「红方」「蓝方」）；`announceText` 里 `sideName(last.who, names)`。
+- 测试：PlayView 传 names → 轮次标签 / 历史标题 / 播报均显示昵称；不传时回退红/蓝方。
+
+**B2 — 弹出菜单视口夹取（Med bug）**：`openMenu` 当前 `left:r.left, top:r.bottom` 无夹取，最右列/最底行在窄屏溢出。
+- `openMenu`：用单元格 `getBoundingClientRect()` 计算后，按估算菜单尺寸（宽 ~120、3 项高 ~132）做夹取：`left` 限制在 `[8, innerWidth-菜单宽-8]`；若 `下方空间不足` 则向上弹（`top = r.top - 菜单高`），否则 `r.bottom`；`top` 也夹到 `[8, innerHeight-菜单高-8]`。
+- 验证：headless 在窄视口渲染最右列/最底行菜单，确认完整可见不溢出（jsdom 无布局，单测不校验坐标）。
+
+> B1/B2 与本开关同处 SolverPanel/PlayView 区域，顺手修复；不扩展到位数选择、perf 合并、CI/lint 等其它审查项（另行安排）。
