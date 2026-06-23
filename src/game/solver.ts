@@ -37,7 +37,7 @@ export function filterByFacts(candidates: string[], guesses: GuessRecord[]): str
   return candidates.filter((c) => guesses.every((g) => feedback(c, g.guess) === g.feedback))
 }
 
-export type CellState = 'available' | 'eliminated' | 'crossed' | 'fixed' | 'assumed' | 'conflict'
+export type CellState = 'available' | 'eliminated' | 'crossed' | 'fixed' | 'fixedAssumed' | 'assumed' | 'conflict'
 
 export interface SolverInput {
   digits: number
@@ -88,6 +88,7 @@ export function solve(input: SolverInput): Grid {
       const factHasIt = factDigitsAt[pos].has(d)
       const colOnlyThis = derivedDigitsAt[pos].size === 1 && posDigitOK
 
+      const factColOnlyThis = factDigitsAt[pos].size === 1 && factHasIt
       let state: CellState
       if (assumptions[pos] === digit) {
         state = posDigitOK && !whatifEmpty ? 'assumed' : 'conflict'
@@ -96,7 +97,7 @@ export function solve(input: SolverInput): Grid {
       } else if (!factHasIt) {
         state = 'eliminated'
       } else if (colOnlyThis) {
-        state = 'fixed'
+        state = factColOnlyThis ? 'fixed' : 'fixedAssumed'
       } else if (!posDigitOK) {
         state = 'eliminated'
       } else {

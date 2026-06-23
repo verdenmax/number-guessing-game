@@ -179,12 +179,12 @@ describe('solve', () => {
     expect(grid[0][7]).toBe('crossed') // 手动划除
   })
 
-  it('划除联动：划掉 pos0 除某值外所有 → 余下值 fixed', () => {
-    // 划掉 pos0 的 0..8（保留 9）→ pos0 只能是 9 → fixed
+  it('划除联动：划掉 pos0 除某值外所有 → 余下值 fixedAssumed（仅因划除而唯一）', () => {
+    // 划掉 pos0 的 0..8（保留 9）→ pos0 只能是 9，但唯一性仅来自手动划除（无事实）→ fixedAssumed
     const crossed = new Set<string>()
     for (let d = 0; d <= 8; d++) crossed.add(`0-${d}`)
     const grid = solve(baseInput({ crossedOut: crossed }))
-    expect(grid[0][9]).toBe('fixed')
+    expect(grid[0][9]).toBe('fixedAssumed')
   })
 
   it('digits=1 网格为 1 列', () => {
@@ -276,6 +276,33 @@ describe('solve', () => {
     expect(grid[0][9]).toBe('conflict') // 矛盾假设标红
     expect(grid[1][2]).toBe('fixed') // pos1 事实确定是 2，不因矛盾变灰
     expect(grid[0][1]).toBe('fixed') // pos0 事实确定是 1
+  })
+})
+
+describe('solve：区分事实确定 / 假设下确定（fixedAssumed）', () => {
+  it('无假设、事实即唯一 → fixed（实心）', () => {
+    const g = solve({ digits: 2, guesses: [{ guess: '01', feedback: 2 }], assumptions: [null, null], crossedOut: new Set() })
+    expect(g[0][0]).toBe('fixed')
+    expect(g[1][1]).toBe('fixed')
+  })
+
+  it('某列仅因假设而唯一 → fixedAssumed（依赖假设）', () => {
+    const g = solve({ digits: 2, guesses: [{ guess: '00', feedback: 1 }], assumptions: [5, null], crossedOut: new Set() })
+    expect(g[0][5]).toBe('assumed')
+    expect(g[1][0]).toBe('fixedAssumed')
+  })
+
+  it('撤掉该假设后，同格回到 available（并非事实确定）', () => {
+    const g = solve({ digits: 2, guesses: [{ guess: '00', feedback: 1 }], assumptions: [null, null], crossedOut: new Set() })
+    expect(g[1][0]).toBe('available')
+  })
+
+  it('假设矛盾导致 whatif 空时，不产生 fixedAssumed', () => {
+    const g = solve({ digits: 2, guesses: [], assumptions: [5, 5], crossedOut: new Set() })
+    const flat = g.flat()
+    expect(flat).not.toContain('fixedAssumed')
+    expect(g[0][5]).toBe('conflict')
+    expect(g[1][5]).toBe('conflict')
   })
 })
 

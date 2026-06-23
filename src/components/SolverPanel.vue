@@ -31,6 +31,7 @@ const stateLabel: Record<CellState, string> = {
   eliminated: '已排除',
   crossed: '已划除',
   fixed: '确定',
+  fixedAssumed: '假设下确定',
   assumed: '已假设',
   conflict: '矛盾',
 }
