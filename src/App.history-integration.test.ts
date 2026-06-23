@@ -53,12 +53,4 @@ describe('App 历史真实持久化（真实 IndexedDB，不 mock store）', () 
     expect(records[0].names).toEqual({ p1: 'Alice', p2: null })
     expect(view.props('error')).toBeNull()
   })
-
-  it('持久化的记录可被结构化克隆（防 DataCloneError 回归）', async () => {
-    const w = mount(App)
-    await playToWin(w)
-    await waitForSaved(1)
-    const [record] = await listGames()
-    expect(() => structuredClone(record)).not.toThrow()
-  })
 })

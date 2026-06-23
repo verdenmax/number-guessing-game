@@ -7,9 +7,15 @@ describe('formatPlayedAt', () => {
     expect(formatPlayedAt(Date.now())).toMatch(/^\d{2}-\d{2} \d{2}:\d{2}$/)
   })
 
-  it('对具体时间补零正确', () => {
-    // 构造本地时间 2026-03-05 09:07，按本地时区格式化后形状与补零正确
-    const ms = new Date(2026, 2, 5, 9, 7).getTime()
+  it('同年：省略年份，补零正确', () => {
+    const y = new Date().getFullYear()
+    const ms = new Date(y, 2, 5, 9, 7).getTime()
     expect(formatPlayedAt(ms)).toBe('03-05 09:07')
+  })
+
+  it('跨年（非当前年）：补上年份', () => {
+    const past = new Date().getFullYear() - 1
+    const ms = new Date(past, 2, 5, 9, 7).getTime()
+    expect(formatPlayedAt(ms)).toBe(`${past}-03-05 09:07`)
   })
 })

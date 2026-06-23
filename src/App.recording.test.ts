@@ -53,7 +53,7 @@ describe('App 录入历史', () => {
     expect(id1).not.toBe(id2)
   })
 
-  it('保存失败时显示 saveError，不崩', async () => {
+  it('保存失败时显示 saveStatus=error（历史保存失败），不崩', async () => {
     mockStore.saveGame.mockRejectedValueOnce(new Error('quota'))
     const w = mount(App)
     await playToWin(w)
