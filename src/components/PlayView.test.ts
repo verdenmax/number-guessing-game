@@ -66,4 +66,14 @@ describe('PlayView', () => {
     const w = mount(PlayView, { props: { digits: 4, current: 'p1', validate: okValidate, history: { p1: [], p2: [] } } })
     expect(w.find('.histories h2').exists()).toBe(true)
   })
+
+  it('双方等长时播报后手(蓝方)的最新一手', () => {
+    const history = { p1: [{ guess: '1111', feedback: 1 }], p2: [{ guess: '2222', feedback: 3 }] }
+    const w = mount(PlayView, { props: { digits: 4, current: 'p1', validate: okValidate, history } })
+    const status = w.find('[role="status"]').text()
+    expect(status).toContain('蓝方')
+    expect(status).toContain('2222')
+    expect(status).toContain('正确数目 3')
+    expect(status).not.toContain('1111')
+  })
 })
