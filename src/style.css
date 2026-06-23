@@ -541,8 +541,32 @@ button:disabled {
 /* 图例 + 帮助 */
 .solver-help-bar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 6px;
+}
+.solver-mode {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+/* 复选框需重置全局 input 的 flex/width/padding，否则会被拉伸成大框 */
+.solver-mode input {
+  flex: none;
+  width: auto;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.legend-mode {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
 }
 .solver-help-btn {
   width: 24px;
