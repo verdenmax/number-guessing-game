@@ -307,4 +307,14 @@ describe('SolverPanel 剩 N 个可能', () => {
     await w.vm.$nextTick()
     expect(w.find('.solver-count').exists()).toBe(false)
   })
+
+  it('剩 N 个可能随假设实时更新', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.vm.$nextTick()
+    expect(w.find('.solver-count').text()).toContain('剩 5040 个可能')
+    await assume(w, 5 * 4 + 0) // 经菜单假设 pos0=5
+    await w.vm.$nextTick()
+    expect(w.find('.solver-count').text()).toContain('剩 504 个可能')
+  })
 })
