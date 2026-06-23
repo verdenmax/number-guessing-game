@@ -84,3 +84,19 @@ describe('App 整合', () => {
     expect(w.findComponent(SetupView).exists()).toBe(true)
   })
 })
+
+describe('App 顶层标题与导航', () => {
+  it('主标题为中文 h1，位于 main 内', () => {
+    const w = mount(App)
+    const h1 = w.find('main h1')
+    expect(h1.exists()).toBe(true)
+    expect(h1.text()).toBe('猜数字')
+  })
+
+  it('历史入口在具名 nav 内', () => {
+    const w = mount(App)
+    const nav = w.find('nav[aria-label]')
+    expect(nav.exists()).toBe(true)
+    expect(nav.text()).toContain('历史')
+  })
+})
