@@ -68,7 +68,8 @@ function openMenu(e: MouseEvent, pos: number, digit: number) {
     return
   }
   triggerEl = e.currentTarget as HTMLElement
-  menuStyle.value = { left: `${triggerEl.offsetLeft}px`, top: `${triggerEl.offsetTop + triggerEl.offsetHeight}px` }
+  const r = triggerEl.getBoundingClientRect()
+  menuStyle.value = { left: `${r.left}px`, top: `${r.bottom}px` }
   menuFor.value = { pos, digit }
   nextTick(() => menuEl.value?.querySelector('button')?.focus())
 }

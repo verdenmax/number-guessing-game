@@ -910,7 +910,7 @@ button:disabled {
   z-index: 5;
 }
 .solver-menu {
-  position: absolute;
+  position: fixed;
   z-index: 20;
   min-width: 104px;
   display: flex;
@@ -926,6 +926,7 @@ button:disabled {
   width: 100%;
   padding: 9px 14px;
   border: 0;
+  border-radius: 0;
   background: none;
   text-align: left;
   font-size: 0.85rem;
@@ -938,4 +939,6 @@ button:disabled {
 .solver-menu-item:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  background: none;
+  color: var(--text);
 }
