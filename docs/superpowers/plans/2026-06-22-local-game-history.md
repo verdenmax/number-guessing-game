@@ -309,7 +309,7 @@ import { saveGame, listGames, getGame, deleteGame, clearAll } from './store'
 Run: `npx vitest run src/history/store.test.ts`
 Expected: FAIL —— `getGame` / `deleteGame` 不是导出函数（`is not a function`）。
 
-- [ ] **Step 3: 在 `src/history/store.ts` 末尾追加实现**
+- [ ] **Step 3: 在 `src/history/store.ts` 末尾追加实现（含一致的事务中断处理）**
 
 ```typescript
 export async function getGame(id: string): Promise<GameRecord | undefined> {
@@ -319,6 +319,7 @@ export async function getGame(id: string): Promise<GameRecord | undefined> {
     const req = tx.objectStore(STORE).get(id)
     req.onsuccess = () => resolve(req.result as GameRecord | undefined)
     req.onerror = () => reject(req.error ?? new Error('getGame failed'))
+    tx.onabort = () => reject(tx.error ?? new Error('getGame aborted'))
   })
 }
 
@@ -329,9 +330,23 @@ export async function deleteGame(id: string): Promise<void> {
     tx.objectStore(STORE).delete(id)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error ?? new Error('deleteGame failed'))
+    tx.onabort = () => reject(tx.error ?? new Error('deleteGame aborted'))
   })
 }
 ```
+
+- [ ] **Step 3b: 硬化既有 `listGames` / `clearAll` 的事务中断处理（来自 Task 2 代码审查的 Important 建议）**
+
+在 `listGames` 的 `new Promise(...)` 内、`cursorReq.onerror` 之后补：
+```typescript
+    tx.onabort = () => reject(tx.error ?? new Error('listGames aborted'))
+    tx.onerror = () => reject(tx.error ?? new Error('listGames failed'))
+```
+在 `clearAll` 的 `new Promise(...)` 内、`tx.onerror` 之后补：
+```typescript
+    tx.onabort = () => reject(tx.error ?? new Error('clearAll aborted'))
+```
+（目的：所有事务在 abort 路径下都会 reject，避免 Promise 永不 settle；与 `saveGame` 的处理保持一致。`fake-indexeddb` 难以触发 abort，故不新增专门测试，但既有 9 个用例须仍全绿。）
 
 - [ ] **Step 4: 运行测试，确认通过**
 
@@ -406,6 +421,30 @@ describe('buildGameRecord', () => {
     expect(newId()).not.toBe('')
     expect(newId()).not.toBe(newId())
   })
+
+  it('平局对局：outcome 为 draw', () => {
+    let s = createGame({ digits: 4 })
+    s = setSecret(s, 'p1', '0123')
+    s = setSecret(s, 'p2', '4567')
+    s = submitGuess(s, '4567') // p1 命中 p2(4567)
+    s = submitGuess(s, '0123') // p2 命中 p1(0123) → 双中平局 over
+    const r = buildGameRecord(s, { p1: null, p2: null }, { id: 'd', now: 1 })
+    expect(r.outcome).toEqual({ kind: 'draw' })
+    expect(r.rounds).toBe(1)
+  })
+
+  it('多回合：rounds 反映回合数', () => {
+    let s = createGame({ digits: 4 })
+    s = setSecret(s, 'p1', '0123')
+    s = setSecret(s, 'p2', '4567')
+    s = submitGuess(s, '8888') // 第1回合 p1 对 4567 → 0
+    s = submitGuess(s, '8888') // 第1回合 p2 对 0123 → 0 → 进入第2回合
+    s = submitGuess(s, '4567') // 第2回合 p1 命中
+    s = submitGuess(s, '8888') // 第2回合 p2 未中 → p1 胜 over
+    const r = buildGameRecord(s, { p1: null, p2: null }, { id: 'm', now: 1 })
+    expect(r.rounds).toBe(2)
+    expect(r.outcome).toEqual({ kind: 'win', winner: 'p1' })
+  })
 })
 ```
 
@@ -440,12 +479,16 @@ export function buildGameRecord(
   if (state.phase !== 'over') {
     throw new Error('buildGameRecord 只能在 over 阶段调用')
   }
+  const { p1, p2 } = state.secrets
+  if (p1 === null || p2 === null) {
+    throw new Error('over 阶段双方秘密数不应为 null')
+  }
   return {
     id: opts.id ?? newId(),
     playedAt: opts.now ?? Date.now(),
     digits: state.config.digits,
     names: { p1: names.p1, p2: names.p2 },
-    secrets: { p1: state.secrets.p1 as string, p2: state.secrets.p2 as string },
+    secrets: { p1, p2 },
     history: {
       p1: state.history.p1.map((r) => ({ ...r })),
       p2: state.history.p2.map((r) => ({ ...r })),
@@ -861,6 +904,27 @@ describe('HistoryView', () => {
     await buttons[buttons.length - 1].trigger('click') // 最后一个 = 返回
     expect(w.emitted('back')).toHaveLength(1)
   })
+
+  it('取消删除时不 emit remove', async () => {
+    vi.stubGlobal('confirm', () => false)
+    const w = mount(HistoryView, { props: { records: [rec({ id: 'x' })], error: null } })
+    await w.find('.row-del').trigger('click')
+    expect(w.emitted('remove')).toBeUndefined()
+  })
+
+  it('取消清空时不 emit clear', async () => {
+    vi.stubGlobal('confirm', () => false)
+    const w = mount(HistoryView, { props: { records: [rec()], error: null } })
+    await w.find('.history-actions button').trigger('click')
+    expect(w.emitted('clear')).toBeUndefined()
+  })
+
+  it('空列表时清空按钮 disabled，非空时启用', () => {
+    const empty = mount(HistoryView, { props: { records: [], error: null } })
+    expect(empty.find('.history-actions button').attributes('disabled')).toBeDefined()
+    const full = mount(HistoryView, { props: { records: [rec()], error: null } })
+    expect(full.find('.history-actions button').attributes('disabled')).toBeUndefined()
+  })
 })
 ```
 
@@ -1016,6 +1080,13 @@ describe('HistoryDetail', () => {
     await w.find('.detail-del').trigger('click')
     expect(w.emitted('delete')![0]).toEqual(['z'])
   })
+
+  it('取消删除时不 emit delete', async () => {
+    vi.stubGlobal('confirm', () => false)
+    const w = mount(HistoryDetail, { props: { record: rec({ id: 'z' }) } })
+    await w.find('.detail-del').trigger('click')
+    expect(w.emitted('delete')).toBeUndefined()
+  })
 })
 ```
 
@@ -1054,6 +1125,7 @@ function confirmDelete() {
 
 <template>
   <div class="history-detail">
+    <h2 class="detail-title">对局详情</h2>
     <header class="detail-head">
       <button type="button" @click="emit('back')">← 列表</button>
       <span class="when">{{ fmtTime }}</span>
@@ -1206,6 +1278,122 @@ Expected: PASS（原 4 个 + 新 3 个用例）。
 ```bash
 git add src/components/ResultView.vue src/components/ResultView.test.ts
 git commit -m "feat(history): ResultView 显示昵称/保存提示 + 查看历史按钮"
+```
+
+## Task 10b: useHistory `remove`/`clear` 错误降级（采纳 Task 5 代码审查）
+
+落实 Task 5 审查的 carry-forward：让 `remove`/`clear` 的写失败像 `load` 一样降级到 `error`（不再向外 reject），这样 App 的 `@remove`/`@clear` 接线无需 try/catch，也不会产生未处理的 Promise rejection。
+
+**Files:**
+- Modify: `src/composables/useHistory.ts`
+- Test: `src/composables/useHistory.test.ts`（追加 2 用例）
+
+- [ ] **Step 1: 追加失败测试到 `src/composables/useHistory.test.ts`**
+在 `describe('useHistory', ...)` 内、已有用例之后追加：
+```typescript
+  it('remove 失败时设置 error 且不向外抛、跳过重载', async () => {
+    mockStore.deleteGame.mockRejectedValue(new Error('boom'))
+    const h = useHistory()
+    await h.remove('a') // 不应抛出
+    expect(h.error.value).toBe('历史删除失败')
+    expect(mockStore.listGames).not.toHaveBeenCalled()
+  })
+
+  it('clear 失败时设置 error 且不向外抛、跳过重载', async () => {
+    mockStore.clearAll.mockRejectedValue(new Error('boom'))
+    const h = useHistory()
+    await h.clear() // 不应抛出
+    expect(h.error.value).toBe('历史清空失败')
+    expect(mockStore.listGames).not.toHaveBeenCalled()
+  })
+```
+
+- [ ] **Step 2: 运行测试，确认失败**
+Run: `npx vitest run src/composables/useHistory.test.ts`
+Expected: FAIL —— 失败路径当前会 reject（unhandled），error 未被设置。
+
+- [ ] **Step 3: 修改 `src/composables/useHistory.ts` 的 `remove`/`clear`**
+把这两个函数替换为：
+```typescript
+  const remove = async (id: string) => {
+    try {
+      await deleteGame(id)
+    } catch {
+      error.value = '历史删除失败'
+      return
+    }
+    await load()
+  }
+
+  const clear = async () => {
+    try {
+      await clearAll()
+    } catch {
+      error.value = '历史清空失败'
+      return
+    }
+    await load()
+  }
+```
+（`load` 已自带 try/catch；成功路径仍重载并把 error 归零。`catch {` 无绑定以满足 noUnusedLocals。）
+
+- [ ] **Step 4: 运行测试，确认通过**
+Run: `npx vitest run src/composables/useHistory.test.ts`
+Expected: PASS（原 4 + 新 2 = 6）。既有 remove/clear 成功用例仍绿。
+
+- [ ] **Step 5: Commit**
+```bash
+git add src/composables/useHistory.ts src/composables/useHistory.test.ts
+git commit -m "feat(history): useHistory remove/clear 写失败降级到 error"
+```
+
+## Task 10c: HistoryView 错误改为非互斥横幅（采纳 Task 10b 审查）
+
+Task 10b 后写失败会置 `error`，但 HistoryView 当前 `v-if="error"` 与列表互斥——写失败会隐藏仍有效的列表。改为：错误作为顶部横幅常驻，列表/空态独立渲染（records 有则显示列表；无 records 且无 error 才显示空态）。
+
+**Files:**
+- Modify: `src/components/HistoryView.vue`
+- Test: `src/components/HistoryView.test.ts`（追加 1 用例）
+
+- [ ] **Step 1: 追加失败测试到 `src/components/HistoryView.test.ts`**
+在 `describe` 内追加：
+```typescript
+  it('有 error 但仍有 records 时，列表仍显示（错误作为横幅）', () => {
+    const w = mount(HistoryView, { props: { records: [rec({ id: 'x' })], error: '历史删除失败' } })
+    expect(w.text()).toContain('历史删除失败')
+    expect(w.find('.history-list').exists()).toBe(true)
+  })
+```
+
+- [ ] **Step 2: 运行测试，确认失败**
+Run: `npx vitest run src/components/HistoryView.test.ts`
+Expected: FAIL —— 当前 `v-if="error"` 让列表被 `v-else` 排除，`.history-list` 不存在。
+
+- [ ] **Step 3: 修改 `src/components/HistoryView.vue` 模板的渲染分支**
+把：
+```html
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <p v-else-if="records.length === 0" class="empty">还没有历史记录，玩一局试试吧</p>
+
+    <ul v-else class="history-list">
+```
+改为（错误横幅独立；列表按 records 显示；空态仅在无 records 且无 error 时）：
+```html
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <p v-if="records.length === 0 && !error" class="empty">还没有历史记录，玩一局试试吧</p>
+
+    <ul v-if="records.length" class="history-list">
+```
+（`</ul>` 等其余结构不变。注意把原 `v-else` 改为 `v-if="records.length"`，空态条件改为 `records.length === 0 && !error`。）
+
+- [ ] **Step 4: 运行测试，确认通过**
+Run: `npx vitest run src/components/HistoryView.test.ts`
+Expected: PASS（原 11 + 新 1 = 12）。既有 “error 时显示错误信息”（records=[]）仍绿：横幅显示，列表不渲染，空态因 `!error` 不渲染。
+
+- [ ] **Step 5: Commit**
+```bash
+git add src/components/HistoryView.vue src/components/HistoryView.test.ts
+git commit -m "feat(history): HistoryView 错误改为非互斥横幅，列表照常显示"
 ```
 
 ## Task 11: App 整合（录入 + 视图切换）
@@ -1489,6 +1677,72 @@ git add src/App.vue src/App.test.ts src/App.recording.test.ts
 git commit -m "feat(history): App 整合录入历史 + 历史视图切换"
 ```
 
+- [ ] **Step 7: 补详情路径 App 级集成测试（采纳 Task 11 代码审查 M3）**
+
+App 级目前只测了列表 open+back；补详情 open→back 与 open→delete→回列表的端到端接线。追加到 `src/App.recording.test.ts`。
+
+先在该文件顶部 import 增加：
+```typescript
+import HistoryView from './components/HistoryView.vue'
+import HistoryDetail from './components/HistoryDetail.vue'
+import type { GameRecord } from './history/types'
+```
+在 `describe('App 录入历史', ...)` 内追加（与录入用例共用 mock store）：
+```typescript
+  const sampleRecord: GameRecord = {
+    id: 'r1',
+    playedAt: 1,
+    digits: 4,
+    names: { p1: null, p2: null },
+    secrets: { p1: '0123', p2: '4567' },
+    history: { p1: [], p2: [] },
+    outcome: { kind: 'draw' },
+    rounds: 1,
+  }
+
+  it('历史详情：打开记录 → 返回 → 回到列表', async () => {
+    mockStore.listGames.mockResolvedValue([sampleRecord])
+    const w = mount(App)
+    await w.find('.nav-history').trigger('click')
+    await flushPromises()
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+
+    w.findComponent(HistoryView).vm.$emit('open', sampleRecord)
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(true)
+    expect(w.findComponent(HistoryView).exists()).toBe(false)
+
+    w.findComponent(HistoryDetail).vm.$emit('back')
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(false)
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+  })
+
+  it('历史详情：删除 → 调用 deleteGame 并回到列表', async () => {
+    mockStore.listGames.mockResolvedValue([sampleRecord])
+    mockStore.deleteGame.mockResolvedValue(undefined)
+    const w = mount(App)
+    await w.find('.nav-history').trigger('click')
+    await flushPromises()
+    w.findComponent(HistoryView).vm.$emit('open', sampleRecord)
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryDetail).exists()).toBe(true)
+
+    w.findComponent(HistoryDetail).vm.$emit('delete', 'r1')
+    await flushPromises()
+    expect(mockStore.deleteGame).toHaveBeenCalledWith('r1')
+    expect(w.findComponent(HistoryDetail).exists()).toBe(false)
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+  })
+```
+
+- [ ] 运行 `npx vitest run src/App.recording.test.ts` → 6 通过（原 4 + 新 2）；`npx vitest run` → 189；`npx vue-tsc --noEmit` → 0。
+- [ ] Commit：
+```bash
+git add src/App.recording.test.ts
+git commit -m "test(history): App 级补历史详情 open/back/delete 集成测试"
+```
+
 ## Task 12: 样式（style.css）
 
 纯视觉，无逻辑。复用现有 CSS 变量（`--card`/`--border`/`--radius`/`--accent`/`--text-muted`/`--danger` 等）。
@@ -1671,6 +1925,10 @@ git commit -m "feat(history): App 整合录入历史 + 历史视图切换"
   justify-content: center;
   flex-wrap: wrap;
 }
+.result-actions button {
+  padding: 12px 18px;
+  font-size: 1.02rem;
+}
 ```
 
 - [ ] **Step 2: 运行全部测试，确认未破坏**
@@ -1688,6 +1946,38 @@ Expected: `vue-tsc --noEmit` 无错误 + `vite build` 成功产出 `dist/`。
 ```bash
 git add src/style.css
 git commit -m "style(history): 昵称输入/历史列表/详情/保存提示样式"
+```
+
+### Task 12 修正（采纳代码质量审查 —— 修复白字白底/类名冲突/宽度失效）
+
+代码审查发现：全局 `button{color:#fff;background:var(--accent)}` 使新按钮设白底却没设字色 → 白字白底；`<span class="result">` 与 ResultView 容器类 `.result` 冲突；`.app{max-width:460px}` 压死 `.history-page` 宽度。修复：
+
+- [ ] **组件改名（消除 `.result` 类冲突）**
+  - `src/components/HistoryView.vue`：行内结果 `<span class="result">{{ outcomeText(r) }}</span>` → `<span class="row-outcome">{{ outcomeText(r) }}</span>`。
+  - `src/components/HistoryDetail.vue`：`<span class="result">{{ outcomeText }} · …</span>` → `<span class="detail-outcome">{{ outcomeText }} · …</span>`。
+  - （仅改 class 名，文本不变；既有测试基于文本/其它 class，不受影响。）
+
+- [ ] **`src/style.css` 修正（在 Task 12 追加块内）**
+  - `.history-actions button` 增 `color: var(--text);`
+  - `.row-main` 增 `color: var(--text);`（修复 `.match` 与结果列继承白色）
+  - `.history-detail .detail-head button` 增 `color: var(--text);`
+  - 新增 `.row-main .row-outcome { color: var(--text); }` 与 `.history-detail .detail-outcome { color: var(--text-muted); font-size: 0.85rem; }`
+  - `.history-page { width: min(680px, 96vw); }` → 改为更高特异性并覆盖 `.app` 约束：
+    ```css
+    .app.history-page {
+      max-width: min(680px, 96vw);
+      flex: 0 1 min(680px, 96vw);
+    }
+    ```
+  - `.saved-hint` 颜色 `#16a34a` → `#15803d`（达到 AA 对比，复用既有绿）
+  - `.name-field input` 增 `letter-spacing: normal; text-align: left;`（覆盖全局 input 的居中+字距）
+  - 新增 `.detail-title { margin: 0 0 12px; font-size: 1.2rem; }`
+
+- [ ] 验证：`npm run test` → 189 全绿；`npm run build` → 成功；并人工/语义确认上述按钮与历史行文字可见。
+- [ ] Commit：
+```bash
+git add src/style.css src/components/HistoryView.vue src/components/HistoryDetail.vue
+git commit -m "style(history): 修复按钮白字白底/.result 类冲突/历史页宽度（采纳代码审查）"
 ```
 
 ## Task 13: 文档（L1–L4 + README）

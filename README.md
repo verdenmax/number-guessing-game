@@ -32,6 +32,10 @@
 
 推理为纯函数（`src/game/solver.ts`），仅复用引擎的 `feedback`，与对局逻辑独立。详见 [docs/L3-details/solver.md](./docs/L3-details/solver.md) · [docs/L4-api/solver.md](./docs/L4-api/solver.md)。
 
+## 对局历史
+
+每局结束**自动存入浏览器本地历史**（IndexedDB），可在「📜 历史」里查看过往对局的**双方数字与完整猜测记录**，支持**可选昵称**；可删除单局或一键清空。纯前端、与对局引擎解耦，浏览器隐私模式 / 不支持 IndexedDB 时仅内联提示、不影响游戏。详见 [docs/L2-components/history.md](./docs/L2-components/history.md) · [docs/L3-details/history-storage.md](./docs/L3-details/history-storage.md) · [docs/L4-api/history.md](./docs/L4-api/history.md)。
+
 ## 技术栈
 
 - **Vue 3**（`<script setup>` + 组合式 API）
@@ -65,9 +69,9 @@ npm run build    # vue-tsc 类型检查 + 生产构建到 dist/
 | 层级 | 文档 | 内容 |
 |------|------|------|
 | **L1** | [docs/L1-overview.md](./docs/L1-overview.md) | 整体概览：是什么、架构分层图、三阶段流程图、目录总览、如何运行 |
-| **L2** | [engine](./docs/L2-components/engine.md) · [ui](./docs/L2-components/ui.md) · [deploy](./docs/L2-components/deploy.md) | 各部分职责与接口：引擎层 / UI 层 / 部署 |
-| **L3** | [state-machine](./docs/L3-details/state-machine.md) · [handoff](./docs/L3-details/handoff.md) · [validation](./docs/L3-details/validation.md) · [solver](./docs/L3-details/solver.md) | 关键细节：状态机与回合结算 / 保密交接 / 输入校验 / 推理引擎 |
-| **L4** | [engine](./docs/L4-api/engine.md) · [validate](./docs/L4-api/validate.md) · [useGame](./docs/L4-api/useGame.md) · [components](./docs/L4-api/components.md) · [solver](./docs/L4-api/solver.md) | 逐文件 API：函数签名 / props·emits |
+| **L2** | [engine](./docs/L2-components/engine.md) · [ui](./docs/L2-components/ui.md) · [history](./docs/L2-components/history.md) · [deploy](./docs/L2-components/deploy.md) | 各部分职责与接口：引擎层 / UI 层 / 本地历史 / 部署 |
+| **L3** | [state-machine](./docs/L3-details/state-machine.md) · [handoff](./docs/L3-details/handoff.md) · [validation](./docs/L3-details/validation.md) · [solver](./docs/L3-details/solver.md) · [history-storage](./docs/L3-details/history-storage.md) | 关键细节：状态机与回合结算 / 保密交接 / 输入校验 / 推理引擎 / 历史存储 |
+| **L4** | [engine](./docs/L4-api/engine.md) · [validate](./docs/L4-api/validate.md) · [useGame](./docs/L4-api/useGame.md) · [components](./docs/L4-api/components.md) · [solver](./docs/L4-api/solver.md) · [history](./docs/L4-api/history.md) | 逐文件 API：函数签名 / props·emits |
 
 设计文档（spec）：[docs/superpowers/specs/2026-06-22-number-guessing-game-design.md](./docs/superpowers/specs/2026-06-22-number-guessing-game-design.md)
 
@@ -78,16 +82,19 @@ npm run build    # vue-tsc 类型检查 + 生产构建到 dist/
 | L1 | `L1-overview.md` | ✅ |
 | L2 | `L2-components/engine.md` | ✅ |
 | L2 | `L2-components/ui.md` | ✅ |
+| L2 | `L2-components/history.md` | ✅ |
 | L2 | `L2-components/deploy.md` | ✅ |
 | L3 | `L3-details/state-machine.md` | ✅ |
 | L3 | `L3-details/handoff.md` | ✅ |
 | L3 | `L3-details/validation.md` | ✅ |
 | L3 | `L3-details/solver.md` | ✅ |
+| L3 | `L3-details/history-storage.md` | ✅ |
 | L4 | `L4-api/engine.md` | ✅ |
 | L4 | `L4-api/validate.md` | ✅ |
 | L4 | `L4-api/useGame.md` | ✅ |
 | L4 | `L4-api/components.md` | ✅ |
 | L4 | `L4-api/solver.md` | ✅ |
+| L4 | `L4-api/history.md` | ✅ |
 | — | `README.md` | ✅ |
 
 ## 项目结构
@@ -98,9 +105,10 @@ number-guessing-game/
 ├─ src/
 │  ├─ main.ts  App.vue
 │  ├─ game/          # 纯引擎(零 Vue)：types.ts engine.ts validate.ts solver.ts + *.test.ts
-│  ├─ composables/   # useGame.ts
+│  ├─ history/       # 本地历史(零 Vue)：types.ts store.ts(IndexedDB) record.ts
+│  ├─ composables/   # useGame.ts useHistory.ts
 │  └─ components/     # SetupView SecretInput PlayView GuessInput SolverPanel
-│                     #  HistoryList HandoffScreen ResultView
+│                     #  HistoryList HandoffScreen ResultView HistoryView HistoryDetail
 ├─ docs/             # 分层文档 L1–L4
 └─ README.md
 ```

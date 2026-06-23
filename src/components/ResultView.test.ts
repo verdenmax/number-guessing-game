@@ -39,4 +39,49 @@ describe('ResultView', () => {
     await w.find('button').trigger('click')
     expect(w.emitted('playAgain')).toHaveLength(1)
   })
+
+  it('使用昵称显示获胜方与揭晓', () => {
+    const outcome: Outcome = { kind: 'win', winner: 'p1' }
+    const w = mount(ResultView, {
+      props: {
+        outcome,
+        secrets: { p1: '1234', p2: '5678' },
+        history: emptyHistory,
+        names: { p1: 'Alice', p2: 'Bob' },
+        saveError: null,
+      },
+    })
+    expect(w.text()).toContain('Alice获胜')
+    expect(w.text()).toContain('Alice的数字：1234')
+    expect(w.text()).toContain('Bob的数字：5678')
+  })
+
+  it('默认显示已保存提示；saveError 时显示错误', () => {
+    const outcome: Outcome = { kind: 'draw' }
+    const ok = mount(ResultView, {
+      props: { outcome, secrets: { p1: '1', p2: '2' }, history: emptyHistory, saveError: null },
+    })
+    expect(ok.text()).toContain('已保存到历史')
+
+    const fail = mount(ResultView, {
+      props: {
+        outcome,
+        secrets: { p1: '1', p2: '2' },
+        history: emptyHistory,
+        saveError: '历史保存失败',
+      },
+    })
+    expect(fail.text()).toContain('历史保存失败')
+    expect(fail.text()).not.toContain('已保存到历史')
+  })
+
+  it('查看历史按钮 emit viewHistory', async () => {
+    const outcome: Outcome = { kind: 'draw' }
+    const w = mount(ResultView, {
+      props: { outcome, secrets: { p1: '1', p2: '2' }, history: emptyHistory },
+    })
+    const buttons = w.findAll('.result-actions button')
+    await buttons[buttons.length - 1].trigger('click') // 最后一个 = 查看历史
+    expect(w.emitted('viewHistory')).toHaveLength(1)
+  })
 })

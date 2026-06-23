@@ -564,3 +564,213 @@ button:disabled {
     max-width: 460px;
   }
 }
+
+/* ---------- 设置阶段：可选昵称 ---------- */
+.setup-step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: left;
+}
+.name-field input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+  text-align: left;
+}
+.name-field input:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.detail-title {
+  margin: 0 0 12px;
+  font-size: 1.2rem;
+}
+
+/* ---------- 顶部标题栏 + 历史入口 ---------- */
+.app-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.nav-history {
+  position: absolute;
+  right: 0;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.nav-history:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- 历史列表 ---------- */
+.app.history-page {
+  max-width: min(680px, 96vw);
+  flex: 0 1 min(680px, 96vw);
+}
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.history-actions {
+  display: flex;
+  gap: 8px;
+}
+.history-actions button {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.history-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.row-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  cursor: pointer;
+  font: inherit;
+}
+.row-main:hover {
+  border-color: var(--accent);
+}
+.row-main .when {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.row-main .match {
+  font-weight: 600;
+}
+.row-main .meta {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.row-main .row-outcome {
+  color: var(--text);
+}
+.row-del {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  cursor: pointer;
+}
+.row-del:hover {
+  border-color: var(--danger);
+  background: var(--red-soft);
+}
+
+/* ---------- 历史详情 ---------- */
+.history-detail .detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.history-detail .detail-head button {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.history-detail .detail-head .when {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.history-detail .detail-outcome {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.detail-del {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.detail-del:hover {
+  border-color: var(--danger);
+  background: var(--red-soft);
+}
+
+/* ---------- 结果页：保存提示 + 操作 ---------- */
+.saved-hint {
+  color: #15803d;
+  font-size: 0.9rem;
+}
+.result-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.result-actions button {
+  padding: 12px 18px;
+  font-size: 1.02rem;
+}
+
+/* 历史页加宽仅用于桌面行布局；列布局(≤920px)下恢复自动主轴尺寸，
+   避免 flex-basis 泄漏到纵轴把卡片撑高（代码审查回归修复） */
+@media (max-width: 920px) {
+  .app.history-page {
+    flex: 1 1 auto;
+  }
+}
+/* 窄屏：历史行 4 列网格折成 2 列，避免横向溢出 */
+@media (max-width: 480px) {
+  .row-main {
+    grid-template-columns: 1fr auto;
+    row-gap: 4px;
+  }
+}

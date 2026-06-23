@@ -5,6 +5,7 @@ import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
 import SolverPanel from './components/SolverPanel.vue'
+import HistoryView from './components/HistoryView.vue'
 
 describe('App 整合', () => {
   it('完整一局：双方设置 → 猜测 → 红方获胜', async () => {
@@ -67,5 +68,19 @@ describe('App 整合', () => {
     w.findComponent(PlayView).vm.$emit('guess', '1234') // 双中 → 平局结束
     await w.vm.$nextTick()
     expect(w.findAllComponents(SolverPanel)).toHaveLength(0)
+  })
+
+  it('点击「历史」进入历史视图，返回回到游戏', async () => {
+    const w = mount(App)
+    expect(w.findComponent(SetupView).exists()).toBe(true)
+
+    await w.find('.nav-history').trigger('click')
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+    expect(w.findComponent(SetupView).exists()).toBe(false)
+
+    w.findComponent(HistoryView).vm.$emit('back')
+    await w.vm.$nextTick()
+    expect(w.findComponent(SetupView).exists()).toBe(true)
   })
 })
