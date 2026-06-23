@@ -96,6 +96,15 @@ describe('basicSolve（基础模式：只排除、不确定）', () => {
     // 越界假设(99)被忽略，不产生任何排除
     expect(g.flat().filter((s) => s === 'eliminated')).toHaveLength(0)
   })
+
+  it('既假设又划除同一格：假设优先（与智能模式一致，划除不掩盖矛盾）', () => {
+    // 假设 pos0=5 同时右键划除 pos0=5 → 显示 assumed（不被 crossed 掩盖）
+    const g1 = basicSolve(baseInput({ assumptions: [5, null, null, null], crossedOut: new Set(['0-5']) }))
+    expect(g1[0][5]).toBe('assumed')
+    // 两位假设同数字 + 划除其一 → 仍 conflict（不被 crossed 掩盖）
+    const g2 = basicSolve(baseInput({ assumptions: [5, 5, null, null], crossedOut: new Set(['0-5']) }))
+    expect(g2[0][5]).toBe('conflict')
+  })
 })
 ```
 
@@ -138,10 +147,10 @@ export function basicSolve(input: SolverInput): Grid {
     for (let digit = 0; digit < 10; digit++) {
       const key = `${pos}-${digit}`
       let state: CellState
-      if (crossedOut.has(key)) {
-        state = 'crossed'
-      } else if (assumptions[pos] === digit) {
+      if (assumptions[pos] === digit) {
         state = eliminated.has(key) ? 'conflict' : 'assumed'
+      } else if (crossedOut.has(key)) {
+        state = 'crossed'
       } else if (eliminated.has(key)) {
         state = 'eliminated'
       } else {
