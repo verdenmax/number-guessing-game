@@ -29,7 +29,7 @@
         │  叠加 assumptions（有效 0-9 位）   │
         │  叠加 crossedOut（"pos-digit"）    │
         ▼                                    │
-     whatif ──▶ 逐列出现集合 ──▶ 每格五状态  │
+     whatif ──▶ 逐列出现集合 ──▶ 每格六状态  │
                                              │
    （factPossible 仅用于判断「事实是否还有此数字」）
 ```
@@ -54,7 +54,7 @@ flowchart TD
     S --> GR["Grid: grid[pos][digit] = CellState"]
 ```
 
-## 五状态推导表
+## 六状态推导表
 
 `solve` 对每个格子 `(pos, digit)`，自上而下短路判定（与 `solver.ts` 实现一致）。先定义：
 
@@ -67,7 +67,7 @@ flowchart TD
 |:---:|------|------|------|
 | 1 | `assumptions[pos] === digit` 且 `posDigitOK && !whatifEmpty` | `assumed` | 用户假设且成立（高亮） |
 | 1 | `assumptions[pos] === digit` 但 `!posDigitOK` 或 `whatifEmpty` | `conflict` | 假设但 what-if 无此值 / what-if 空（标红） |
-| 2 | 该格被划除（`crossedOut` 含 `"pos-digit"`） | `eliminated` | 手动划除（灰） |
+| 2 | 该格被划除（`crossedOut` 含 `"pos-digit"`） | `crossed` | 手动划除（右键，琥珀虚线，仅标记） |
 | 3 | `!factHasIt` | `eliminated` | 事实排除：历史已否定（灰） |
 | 4 | `colOnlyThis` | `fixed` | 该列只剩这一个（自动确定，绿） |
 | 5 | `!posDigitOK` | `eliminated` | 被其它假设/划除联动排除（灰） |
@@ -78,7 +78,7 @@ flowchart TD
 if (assumptions[pos] === digit) {
   state = posDigitOK && !whatifEmpty ? 'assumed' : 'conflict'
 } else if (crossedOut.has(`${pos}-${digit}`)) {
-  state = 'eliminated'
+  state = 'crossed'
 } else if (!factHasIt) {
   state = 'eliminated'
 } else if (colOnlyThis) {
@@ -90,7 +90,7 @@ if (assumptions[pos] === digit) {
 }
 ```
 
-> **关键**：「是否为本列假设值」最优先，被假设的格永远是 `assumed`/`conflict`，不会被误判成 `fixed`/`eliminated`。
+> **关键**：「是否为本列假设值」最优先，被假设的格永远是 `assumed`/`conflict`，不会被误判成 `crossed`/`fixed`/`eliminated`。
 
 ## 联动收窄与矛盾检测
 
@@ -156,5 +156,5 @@ if (assumptions[pos] === digit) {
 - **优先级假设最先**：与智能模式 `solve` 一致——被假设的格只会是 `assumed`/`conflict`，右键划除不会掩盖矛盾。
 - 右键划除在基础模式下仅作手动标记，不参与推理。
 
-与智能 `solve`（全枚举 + 事实过滤 + 假设/划除联动 + 自动 fixed）的差异见设计文档
-`docs/superpowers/specs/2026-06-23-solver-basic-mode-design.md`。开关每面板独立、默认开启智能、不持久化（刷新回默认）。
+与智能 `solve`（全枚举 + 事实过滤 + 假设/划除联动 + 自动 fixed）的差异见
+[basic 模式设计 spec](../superpowers/specs/2026-06-23-solver-basic-mode-design.md)。开关每面板独立、默认开启智能、不持久化（刷新回默认）。

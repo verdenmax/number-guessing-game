@@ -14,7 +14,7 @@ filterByFacts(candidates: string[], guesses: GuessRecord[]): string[]
 // 复用 engine.feedback，保留对每条猜测记录都吻合的候选。
 
 solve(input: SolverInput): Grid
-// 逐格状态推导：候选 → 事实过滤 → what-if（假设/划除）→ 每格五状态。
+// 逐格状态推导：候选 → 事实过滤 → what-if（假设/划除）→ 每格六状态。
 basicSolve(input: SolverInput): Grid
 // 基础模式：只排除（反馈=0 + 假设格行/列），不产生 fixed；与 solve 同签名可互换。
 ```
@@ -22,7 +22,7 @@ basicSolve(input: SolverInput): Grid
 ## 类型定义
 
 ```typescript
-export type CellState = 'available' | 'eliminated' | 'fixed' | 'assumed' | 'conflict'
+export type CellState = 'available' | 'eliminated' | 'crossed' | 'fixed' | 'assumed' | 'conflict'
 
 export interface SolverInput {
   digits: number
@@ -39,7 +39,8 @@ export type Grid = CellState[][]    // grid[pos][digit]，digits 列 × 10 行
 | 状态 | 含义 | 视觉 |
 |------|------|------|
 | `available` | 仍可能（默认） | 普通 |
-| `eliminated` | 被排除：事实无此 / 手动划除 / 联动排除 | 灰 |
+| `eliminated` | 被排除：事实无此 / 联动排除 | 灰 |
+| `crossed` | 手动划除（右键 / Shift+左键 / Delete），仅标记、不参与推理 | 琥珀虚线 |
 | `fixed` | 该列 what-if 只剩这一个数字（自动确定） | 绿 |
 | `assumed` | 用户假设且成立 | 高亮 |
 | `conflict` | 用户假设但与现有约束矛盾 | 红 |
@@ -130,7 +131,7 @@ whatifEmpty = whatif 为空
 if assumptions[pos] === digit:
     state = (posDigitOK && !whatifEmpty) ? 'assumed' : 'conflict'
 elif crossedOut.has(`${pos}-${digit}`):
-    state = 'eliminated'
+    state = 'crossed'
 elif !factHasIt:
     state = 'eliminated'        // 事实排除
 elif colOnlyThis:
@@ -141,7 +142,7 @@ else:
     state = 'available'
 ```
 
-> 注意优先级：**该格是否为本列假设值** 最优先，因此被假设的格永远显示 `assumed` 或 `conflict`，不会被判成 `fixed`/`eliminated`。
+> 注意优先级：**该格是否为本列假设值** 最优先，因此被假设的格永远显示 `assumed` 或 `conflict`，不会被判成 `crossed`/`fixed`/`eliminated`。
 
 ### 健壮性
 
