@@ -21,4 +21,15 @@ describe('HistoryList', () => {
     expect(w.find('table').exists()).toBe(false)
     expect(w.find('.empty').text()).toContain('还没有猜测')
   })
+
+  it('table 有可访问 caption（含方名）+ 应用 side 主题', () => {
+    const w = mount(HistoryList, {
+      props: { records: [{ guess: '1234', feedback: 2 }], title: '蓝方', side: 'blue' },
+    })
+    const cap = w.find('caption')
+    expect(cap.exists()).toBe(true)
+    expect(cap.text()).toContain('蓝方')
+    expect(cap.classes()).toContain('visually-hidden')
+    expect(w.find('.history').classes()).toContain('side-blue')
+  })
 })
