@@ -159,7 +159,7 @@ function reset() {
           <li v-if="smartMode">
             <span class="solver-cell fixedAssumed">5</span><span>假设下确定：依赖你当前的假设/划除</span>
           </li>
-          <li><span class="solver-cell assumed">5</span><span>假设正确：你左键假设此位为该数字</span></li>
+          <li><span class="solver-cell assumed">5</span><span>假设正确：你在菜单中选「假设此位」</span></li>
           <li><span class="solver-cell crossed">5</span><span>已划除：你手动标记为「不是它」</span></li>
           <li>
             <span class="solver-cell eliminated">5</span><span>真的错误：据猜测历史逻辑上不可能</span>

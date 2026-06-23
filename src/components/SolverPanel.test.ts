@@ -346,4 +346,17 @@ describe('SolverPanel 图例与语义（事实/假设确定、地标、aria）',
     expect(aside.exists()).toBe(true)
     expect(aside.attributes('aria-label')).toContain('蓝方')
   })
+
+  it('图例不再提及左键/右键/Shift/Delete（统一菜单交互）', async () => {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    await w.find('.solver-toggle').trigger('click')
+    await w.find('.solver-help-btn').trigger('click')
+    await w.vm.$nextTick()
+    const txt = w.find('.solver-legend').text()
+    expect(txt).not.toContain('左键')
+    expect(txt).not.toContain('右键')
+    expect(txt).not.toContain('Shift')
+    expect(txt).not.toContain('Delete')
+    expect(txt).toContain('菜单')
+  })
 })
