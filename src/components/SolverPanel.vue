@@ -82,9 +82,14 @@ function reset() {
         </button>
       </div>
       <div v-if="showHelp" class="solver-legend">
+        <p class="legend-mode">
+          {{ smartMode ? '智能：枚举推理，自动判定确定/排除' : '基础：只标排除（反馈0 + 已知正确的行列），不自动判确定' }}
+        </p>
         <ul class="legend-list">
           <li><span class="solver-cell available">5</span><span>可用：该位仍可能是这个数字</span></li>
-          <li><span class="solver-cell fixed">5</span><span>确定：该位唯一可能就是它</span></li>
+          <li v-if="smartMode">
+            <span class="solver-cell fixed">5</span><span>确定：该位唯一可能就是它</span>
+          </li>
           <li><span class="solver-cell assumed">5</span><span>假设正确：你左键假设此位为该数字</span></li>
           <li><span class="solver-cell crossed">5</span><span>假设错误：你右键划除（认为不是它）</span></li>
           <li>
