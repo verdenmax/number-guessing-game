@@ -240,3 +240,52 @@ describe('SolverPanel 智能/基础开关', () => {
     expect(w.find('.solver-legend').text()).not.toContain('枚举')
   })
 })
+
+describe('SolverPanel 菜单 corner', () => {
+  function expand() {
+    const w = mount(SolverPanel, { props: { digits: 4, guesses: [], side: 'red' } })
+    w.find('.solver-toggle').trigger('click')
+    return w
+  }
+
+  it('清除可移除划除（仅划除时清除可用）', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    const idx = 6 * 4 + 2
+    await cross(w, idx)
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('crossed')
+    await open(w, idx)
+    // 仅划除也应可清除（canClear 对划除为真）
+    expect(w.find('.solver-menu [data-act="clear"]').attributes('disabled')).toBeUndefined()
+    await act(w, 'clear')
+    expect(w.findAll('.solver-cell')[idx].classes()).toContain('available')
+  })
+
+  it('A 菜单开着点 B → 锚点切到 B，对 B 操作生效', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await open(w, 5 * 4 + 0)
+    expect(w.find('.solver-menu').exists()).toBe(true)
+    await open(w, 3 * 4 + 0) // 点另一格
+    expect(w.find('.solver-menu').exists()).toBe(true)
+    await act(w, 'assume')
+    expect(w.findAll('.solver-cell')[3 * 4 + 0].classes()).toContain('assumed')
+    expect(w.findAll('.solver-cell')[5 * 4 + 0].classes()).not.toContain('assumed')
+  })
+
+  it('右键(contextmenu)也打开菜单', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await w.findAll('.solver-cell')[5 * 4 + 0].trigger('contextmenu')
+    expect(w.find('.solver-menu').exists()).toBe(true)
+  })
+
+  it('同格再点关闭菜单（toggle）', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await open(w, 5 * 4 + 0)
+    expect(w.find('.solver-menu').exists()).toBe(true)
+    await open(w, 5 * 4 + 0)
+    expect(w.find('.solver-menu').exists()).toBe(false)
+  })
+})
