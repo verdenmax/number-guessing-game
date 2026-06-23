@@ -136,7 +136,7 @@ function reset() {
       <div class="solver-help-bar">
         <label class="solver-mode">
           <input type="checkbox" v-model="smartMode" />
-          🧠 智能推理
+          <span aria-hidden="true">🧠</span> 智能推理
         </label>
         <button
           type="button"

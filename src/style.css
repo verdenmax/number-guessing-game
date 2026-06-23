@@ -517,9 +517,8 @@ button:disabled {
 
 .solver-cell.eliminated {
   background: #f3f4f6;
-  color: #c2c5cc;
+  color: #4b5563;
   text-decoration: line-through;
-  opacity: 0.7;
 }
 
 /* 手动划除（点击格子→菜单「划除」）：你的"假设错误"标记。
@@ -537,6 +536,24 @@ button:disabled {
   background: #dcfce7;
   color: #15803d;
   border-color: #4ade80;
+}
+
+/* 非颜色线索：事实确定打 ✓、已假设打 ·（配合 fixedAssumed 虚线+* 形成形状区分，照顾色盲） */
+.solver-cell.fixed::after {
+  content: '✓';
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  line-height: 1;
+  color: #15803d;
+}
+.solver-cell.assumed::after {
+  content: '·';
+  position: absolute;
+  top: 0;
+  right: 4px;
+  font-weight: 700;
 }
 
 /* 假设下确定：仅在当前假设/划除下唯一。绿底 + 虚线 + 角标 *，与实心「事实确定」区分（形状/标记双重线索）。 */
@@ -980,4 +997,15 @@ button:disabled {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }
