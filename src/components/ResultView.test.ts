@@ -31,7 +31,7 @@ describe('ResultView', () => {
     expect(w.text()).toContain('5678')
   })
 
-  it('再来一局 emit', async () => {
+  it('换数字再战 emit playAgain', async () => {
     const outcome: Outcome = { kind: 'draw' }
     const w = mount(ResultView, {
       props: { outcome, secrets: { p1: '1234', p2: '5678' }, history: emptyHistory },
@@ -78,5 +78,33 @@ describe('ResultView', () => {
     const buttons = w.findAll('.result-actions button')
     await buttons[buttons.length - 1].trigger('click') // 最后一个 = 查看历史
     expect(w.emitted('viewHistory')).toHaveLength(1)
+  })
+
+  it('挂载时把焦点移到结果标题', () => {
+    const outcome: Outcome = { kind: 'draw' }
+    const w = mount(ResultView, {
+      attachTo: document.body,
+      props: { outcome, secrets: { p1: '1234', p2: '5678' }, history: emptyHistory, saveStatus: 'saved' as const },
+    })
+    expect(document.activeElement).toBe(w.find('h2').element)
+    w.unmount()
+  })
+
+  it('保存状态在 polite live region 内', () => {
+    const outcome: Outcome = { kind: 'draw' }
+    const w = mount(ResultView, {
+      props: { outcome, secrets: { p1: '1234', p2: '5678' }, history: emptyHistory, saveStatus: 'saved' as const },
+    })
+    const region = w.find('[role="status"]')
+    expect(region.attributes('aria-live')).toBe('polite')
+    expect(region.text()).toContain('已保存')
+  })
+
+  it('再战按钮文案为「换数字再战」', () => {
+    const outcome: Outcome = { kind: 'draw' }
+    const w = mount(ResultView, {
+      props: { outcome, secrets: { p1: '1234', p2: '5678' }, history: emptyHistory },
+    })
+    expect(w.find('.result-actions').text()).toContain('换数字再战')
   })
 })
