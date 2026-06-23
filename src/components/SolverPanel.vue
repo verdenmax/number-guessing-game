@@ -80,6 +80,15 @@ function closeMenu() {
   triggerEl = null
 }
 
+// 焦点移出菜单（如键盘 Tab 出最后一项）→ 关闭菜单，但不把焦点抢回格子，让它落到去向处
+function onMenuFocusOut(e: FocusEvent) {
+  if (!menuFor.value) return
+  const next = e.relatedTarget as Node | null
+  if (next && menuEl.value?.contains(next)) return
+  menuFor.value = null
+  triggerEl = null
+}
+
 function chooseAssume() {
   const m = menuFor.value
   if (!m) return
@@ -199,6 +208,7 @@ function reset() {
           role="menu"
           :style="menuStyle"
           @keydown.esc="closeMenu"
+          @focusout="onMenuFocusOut"
         >
           <button type="button" role="menuitem" class="solver-menu-item" data-act="assume" @click="chooseAssume">
             假设此位

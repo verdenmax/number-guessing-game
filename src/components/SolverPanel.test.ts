@@ -288,6 +288,16 @@ describe('SolverPanel 菜单 corner', () => {
     await open(w, 5 * 4 + 0)
     expect(w.find('.solver-menu').exists()).toBe(false)
   })
+
+  it('键盘焦点移出菜单（Tab 出）自动关闭', async () => {
+    const w = expand()
+    await w.vm.$nextTick()
+    await open(w, 5 * 4 + 0)
+    expect(w.find('.solver-menu').exists()).toBe(true)
+    // 焦点移到菜单外（如「重置假设」按钮）→ 菜单自动关闭
+    await w.find('.solver-menu').trigger('focusout', { relatedTarget: w.find('.solver-reset').element })
+    expect(w.find('.solver-menu').exists()).toBe(false)
+  })
 })
 
 describe('SolverPanel 剩 N 个可能', () => {
