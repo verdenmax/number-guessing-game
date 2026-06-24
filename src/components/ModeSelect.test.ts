@@ -57,4 +57,11 @@ describe('ModeSelect', () => {
     expect(radios).toHaveLength(3)
     expect(radios.every((r) => (r.element as HTMLInputElement).name === 'difficulty')).toBe(true)
   })
+
+  it('挂载时聚焦首个模式按钮（双人）', async () => {
+    const w = mount(ModeSelect, { attachTo: document.body })
+    await w.vm.$nextTick()
+    expect(document.activeElement).toBe(w.find('.mode-pvp').element)
+    w.unmount()
+  })
 })

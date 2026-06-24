@@ -5,6 +5,7 @@ import ModeSelect from './components/ModeSelect.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
+import SolverPanel from './components/SolverPanel.vue'
 import { botGuess } from './game/bot'
 
 // 固定 bot 秘密/猜测，使 pve 集成可确定推进（真实算法由 bot.test.ts 覆盖）
@@ -81,6 +82,14 @@ describe('App 人机对战(pve)', () => {
     vi.advanceTimersByTime(1000)
     expect(mockedGuess.mock.calls.length).toBe(before) // 卸载清了定时器→bot 未出招；若移除 onUnmounted(clearBotTimer) 则会 +1
     vi.useRealTimers()
+  })
+
+  it('pve 对局两侧 SolverPanel 都渲染（玩家可看 bot 推理）', async () => {
+    const w = mount(App)
+    await startPve(w)
+    w.findComponent(SetupView).vm.$emit('setSecret', 'p1', '1234')
+    await w.vm.$nextTick()
+    expect(w.findAllComponents(SolverPanel)).toHaveLength(2)
   })
 
   it('pve 再战回模式选择且不把 bot 名带入双人局（清 names.p2）', async () => {

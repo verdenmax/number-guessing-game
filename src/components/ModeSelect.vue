@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
 import type { GameMode } from '../game/types'
 import type { BotDifficulty } from '../game/bot'
 
@@ -7,8 +7,11 @@ const emit = defineEmits<{ select: [mode: GameMode, difficulty?: BotDifficulty] 
 
 const showDifficulty = ref(false)
 const difficulty = ref<BotDifficulty>('normal')
+const pvpBtn = ref<HTMLButtonElement | null>(null)
 const pveBtn = ref<HTMLButtonElement | null>(null)
 const diffLegend = ref<HTMLElement | null>(null)
+
+onMounted(() => pvpBtn.value?.focus())
 
 async function openDifficulty() {
   showDifficulty.value = true
@@ -27,7 +30,7 @@ async function backToModes() {
     <h2>选择对战模式</h2>
 
     <div v-if="!showDifficulty" class="mode-options">
-      <button type="button" class="mode-btn mode-pvp" @click="emit('select', 'pvp')">
+      <button ref="pvpBtn" type="button" class="mode-btn mode-pvp" @click="emit('select', 'pvp')">
         <span class="mode-icon" aria-hidden="true">👥</span>
         <span class="mode-title">双人对战</span>
         <span class="mode-desc">同一设备热座，红蓝轮流</span>
