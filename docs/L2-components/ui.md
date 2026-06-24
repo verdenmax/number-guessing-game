@@ -1,6 +1,6 @@
 # L2 · UI 层（`src/components/` + `App.vue`）
 
-> 上层：[L1 概览](../L1-overview.md) ｜ 下钻：[L3 保密交接](../L3-details/handoff.md) · [L3 推理引擎](../L3-details/solver.md) · [L4 components API](../L4-api/components.md) · [L4 useGame API](../L4-api/useGame.md)
+> 上层：[L1 概览](../L1-overview.md) ｜ 下钻：[L3 保密交接](../L3-details/handoff.md) · [L3 推理引擎](../L3-details/solver.md) · [L4 components API](../L4-api/components.md) · [L4 useGame API](../L4-api/useGame.md) · [L3 人机对战策略](../L3-details/bot-strategy.md) · [L4 bot API](../L4-api/bot.md)
 
 ## 定位
 

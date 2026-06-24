@@ -1433,7 +1433,7 @@ sequenceDiagram
     loop 每个 bot 回合
         U->>App: 玩家猜 → current 变 p2
         Note over App: watch([phase,current]) 触发
-        App->>App: clearBotTimer(); 启动 0.8s 定时器
+        App->>App: clearBotTimer() 后启动 0.8s 定时器
         App->>Bot: botGuess(history.p2, digits, 难度)
         App->>E: applyGuess(bot 的猜测)
     end

@@ -100,7 +100,7 @@ over --再来一局--> setup_红
 
 **公平性**：先手（红方）即使先猜中也**不立即结束**，要等蓝方在同一回合也猜一次后才统一结算，从而保证双方猜测次数始终相等（详见 [L3 状态机](./L3-details/state-machine.md)）。猜测阶段两侧各有一个 `SolverPanel` 推理助手（红 = `history.p1`，蓝 = `history.p2`），默认收起。
 
-- **人机对战**：开局可选「双人(热座) / 人机」；人机模式玩家先手，电脑复用 solver 候选推理，分简单/普通/困难三档。详见 [L3 人机对战策略](L3-details/bot-strategy.md) · [L4 bot API](L4-api/bot.md)。
+- **人机对战**：开局可选「双人(热座) / 人机」；人机模式玩家先手，电脑复用 solver 候选推理，分简单/普通/困难三档。详见 [L3 人机对战策略](./L3-details/bot-strategy.md) · [L4 bot API](./L4-api/bot.md)。
 
 **本地对局历史**：进入 `over` 后本局会**自动存入浏览器本地历史**（IndexedDB，`src/history/`，支持可选昵称），可在「📜 历史」里回看过往对局的**双方数字与完整猜测记录**；纯前端、与引擎解耦，IndexedDB 不可用时仅内联提示、不影响游戏（详见 [L2 历史](./L2-components/history.md)）。
 
@@ -108,7 +108,7 @@ over --再来一局--> setup_红
 
 | 目录 / 文件 | 职责 |
 |-------------|------|
-| `src/game/` | **纯逻辑引擎（零 Vue）**：`types.ts` 类型、`validate.ts` 校验、`engine.ts` 算提示与状态机、`solver.ts` 推理引擎（枚举·事实过滤·what-if·逐格状态，仅复用 `engine.feedback`）。可被 Vitest 独立穷尽测试。 |
+| `src/game/` | **纯逻辑引擎（零 Vue）**：`types.ts` 类型、`validate.ts` 校验、`engine.ts` 算提示与状态机、`solver.ts` 推理引擎（枚举·事实过滤·what-if·逐格状态，仅复用 `engine.feedback`）、`bot.ts` 人机 bot（随机秘密 + 三档选猜，复用 solver/engine）。可被 Vitest 独立穷尽测试。 |
 | `src/composables/` | `useGame.ts` 把引擎接入 Vue 响应式；`useHistory.ts` 把历史存储接入响应式（`records`/`error` + `load`/`remove`/`clear`）。 |
 | `src/history/` | **本地对局历史（纯前端，零 Vue / 与引擎解耦）**：`types.ts` 记录结构、`store.ts` IndexedDB 封装（save/list/delete/clear）、`record.ts` 从 `GameState` 组装记录。每局结束自动存档，可选昵称，详见 [L2 历史](./L2-components/history.md)。 |
 | `src/components/` | UI 组件：`App.vue` 之下的 `SetupView / SecretInput / PlayView / GuessInput / HistoryList / HandoffScreen / ResultView`、历史视图 `HistoryView / HistoryDetail`，以及推理助手 `SolverPanel`（红蓝各一）。 |
@@ -138,5 +138,5 @@ npm run build    # 类型检查(vue-tsc) + 生产构建到 dist/
 ## 下钻阅读
 
 - [L2 · 引擎层](./L2-components/engine.md) ｜ [L2 · UI 层](./L2-components/ui.md) ｜ [L2 · 历史](./L2-components/history.md) ｜ [L2 · 部署](./L2-components/deploy.md)
-- [L3 · 状态机](./L3-details/state-machine.md) ｜ [L3 · 保密交接](./L3-details/handoff.md) ｜ [L3 · 校验](./L3-details/validation.md) ｜ [L3 · 推理引擎](./L3-details/solver.md) ｜ [L3 · 历史存储](./L3-details/history-storage.md)
-- [L4 · engine API](./L4-api/engine.md) ｜ [validate API](./L4-api/validate.md) ｜ [useGame API](./L4-api/useGame.md) ｜ [components API](./L4-api/components.md) ｜ [solver API](./L4-api/solver.md) ｜ [history API](./L4-api/history.md)
+- [L3 · 状态机](./L3-details/state-machine.md) ｜ [L3 · 保密交接](./L3-details/handoff.md) ｜ [L3 · 校验](./L3-details/validation.md) ｜ [L3 · 推理引擎](./L3-details/solver.md) ｜ [L3 · 人机对战策略](./L3-details/bot-strategy.md) ｜ [L3 · 历史存储](./L3-details/history-storage.md)
+- [L4 · engine API](./L4-api/engine.md) ｜ [validate API](./L4-api/validate.md) ｜ [useGame API](./L4-api/useGame.md) ｜ [components API](./L4-api/components.md) ｜ [solver API](./L4-api/solver.md) ｜ [bot API](./L4-api/bot.md) ｜ [history API](./L4-api/history.md)
