@@ -39,4 +39,22 @@ describe('ModeSelect', () => {
     await w.find('.start-pve').trigger('click')
     expect(w.emitted('select')).toEqual([['pve', 'normal']])
   })
+
+  it('点「返回」回到模式选择且不 emit', async () => {
+    const w = mount(ModeSelect)
+    await w.find('.mode-pve').trigger('click')
+    expect(w.find('.difficulty-options').exists()).toBe(true)
+    await w.find('.back-mode').trigger('click')
+    expect(w.find('.mode-options').exists()).toBe(true)
+    expect(w.find('.difficulty-options').exists()).toBe(false)
+    expect(w.emitted('select')).toBeUndefined()
+  })
+
+  it('难度单选组共享 name（原生键盘箭头切换可用）', async () => {
+    const w = mount(ModeSelect)
+    await w.find('.mode-pve').trigger('click')
+    const radios = w.findAll('input[type="radio"]')
+    expect(radios).toHaveLength(3)
+    expect(radios.every((r) => (r.element as HTMLInputElement).name === 'difficulty')).toBe(true)
+  })
 })
