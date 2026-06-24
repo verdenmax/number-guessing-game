@@ -65,6 +65,7 @@ function clearBotTimer() {
 }
 
 // pve：轮到 bot(p2) 时延迟出招；每次状态变化先清旧定时器防重入/串台
+// 仅依赖 [phase, current]：gameMode 在一局进行中(playing)不会改变（playAgain 同步置 null 且 reset 令 current=p1），故无需作为依赖
 watch([phase, current], ([ph, cur]) => {
   clearBotTimer()
   if (gameMode.value === 'pve' && ph === 'playing' && cur === 'p2') {
