@@ -11,7 +11,7 @@
 - **bot 加思考延迟**（~0.8s）+「🤖 电脑思考中…」提示。
 - **架构方案 A**：App/composable 层 `watch` 驱动，引擎完全不变；新增纯函数 `src/game/bot.ts`。
 
-**我方默认（已随设计确认）**：bot 名字 `电脑·难度`（如「电脑·困难」）；pve 对局照常存历史、列表靠 bot 名字+🤖 前缀区分（历史 schema 零改动）；再战回到「模式选择」。
+**我方默认（已随设计确认）**：bot 名字 `🤖 电脑·难度`（如「🤖 电脑·困难」，🤖 内嵌于名字）；pve 对局照常存历史，所有显示名经既有 `sideName`/`names` 自动带 🤖 与真人区分（历史 schema 零改动、渲染组件零改动）；再战回到「模式选择」。
 
 ## 2. 现状（已核实）
 
@@ -27,7 +27,8 @@
 
 ```typescript
 import type { GuessRecord } from './types'
-import { enumerateCandidates, filterByFacts, feedback } from './solver'
+import { feedback } from './engine'
+import { enumerateCandidates, filterByFacts } from './solver'
 
 export type BotDifficulty = 'easy' | 'normal' | 'hard'
 
@@ -68,7 +69,7 @@ export type GameMode = 'pvp' | 'pve'
 `App.vue` 新增 ref：
 - `gameMode = ref<GameMode | null>(null)`：`null` → 渲染 `ModeSelect`；选定后渲染既有 setup/play/over 流程。
 - `botDifficulty = ref<BotDifficulty>('normal')`。
-- `botName = computed(() => '电脑·' + ({ easy: '简单', normal: '普通', hard: '困难' } as const)[botDifficulty.value])`。
+- `botName = computed(() => '🤖 电脑·' + ({ easy: '简单', normal: '普通', hard: '困难' } as const)[botDifficulty.value])`（🤖 内嵌，play/result/history 经 `sideName` 自动显示，渲染层无需改）。
 
 ## 5. 新增组件 `src/components/ModeSelect.vue`
 
@@ -118,7 +119,7 @@ watch([phase, current], () => {
 
 ## 7. 历史 / 结果 / 再战
 
-- **历史**：pve 对局照常 `buildGameRecord`（`names.p2='电脑·难度'`）。`HistoryView`/`HistoryList` 行渲染时若 `names?.p2` 含「电脑」→ 加 🤖 前缀（纯展示层判断，**历史 schema 零改动**）。
+- **历史**：pve 对局照常 `buildGameRecord`（`names.p2='🤖 电脑·难度'`，🤖 已内嵌 bot 名）。`HistoryView`/`HistoryList`/`ResultView` 经既有 `sideName(_, names)` 自动显示带 🤖 的 bot 名——**历史 schema 零改动、这些渲染组件零改动**（避免逐组件加前缀，也不会误标 pvp 中自起名含「电脑」的真人）。
 - **结果**：`ResultView` 照常揭晓双方数字（含 bot 的）。
 - **再战**：`playAgain()` 末尾 `gameMode.value = null`（回到 ModeSelect）+ `clearBotTimer()`；**`names` 保留**——pvp 再战回 ModeSelect→选双人后 `SetupView` 仍预填昵称，延续既有「保留昵称再战」语义；pve 再次选模式时 `onSelectMode` 用 `applyName('p2', botName)` 覆盖蓝方名（若从 pve 切回 pvp，蓝方残留 bot 名属边缘路径，用户可在 setup 改写，无害）。
 
@@ -144,7 +145,7 @@ watch([phase, current], () => {
 ## 9. 影响面 / 风险
 
 - 新增：`src/game/bot.ts`(+test)、`src/components/ModeSelect.vue`(+test)。
-- 改：`App.vue`（模式状态/ModeSelect/watch 驱动/setup 接线/思考提示/再战；**含更新既有「换数字再战保留昵称」测试以适配 ModeSelect 中转**）、`SetupView.vue`（`vsBot` prop）、`PlayView.vue`（`botTurn` prop + 思考提示）、`HistoryView.vue`/`HistoryList.vue`（🤖 前缀）、`types.ts`（`GameMode`）、`style.css`（ModeSelect + `.bot-thinking`）、文档（L2/L3/L4 + README）。
+- 改：`App.vue`（模式状态/ModeSelect/watch 驱动/setup 接线/思考提示/再战；**含更新既有「换数字再战保留昵称」测试以适配 ModeSelect 中转**）、`SetupView.vue`（`vsBot` prop）、`PlayView.vue`（`botTurn` prop + 思考提示）、`types.ts`（`GameMode`）、`style.css`（ModeSelect + `.bot-thinking`）、文档（L2/L3/L4 + README）。`HistoryView.vue`/`HistoryList.vue`/`ResultView.vue` 因 🤖 内嵌 bot 名而**零改动**（经既有 `sideName` 自动显示）。
 - 风险：bot timer 防重入/再战串台（统一 `clearBotTimer`）；困难档性能（阈值 150 保护）；setup→playing 时序（自动设 bot 秘密用 watch，交接屏不闪现靠 `vsBot` 不进 handoff）；玩家不能在 bot 回合输入（`botTurn` 隐藏输入框）。
 - 顺序：bot.ts（纯逻辑，先）→ ModeSelect → App 接线（模式选择 + 自动设秘密 + 自动猜 + 思考提示）→ SetupView/PlayView 适配 → 历史🤖 → 文档 → 验证部署。
 
