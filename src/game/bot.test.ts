@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { randomSecret } from './bot'
+import { botGuess, randomSecret } from './bot'
+import { enumerateCandidates, filterByFacts } from './solver'
 
 // 返回固定序列的确定性 rnd（循环复用）
 function seq(values: number[]): () => number {
@@ -36,5 +37,45 @@ describe('randomSecret', () => {
   it('多次调用产生多种结果（确实随机，能杀死常量实现）', () => {
     const seen = new Set(Array.from({ length: 50 }, () => randomSecret(4)))
     expect(seen.size).toBeGreaterThan(1)
+  })
+})
+
+describe('botGuess 简单档', () => {
+  it('easy：digits 位、字符合法（允许重复），忽略候选', () => {
+    const g = botGuess([], 4, 'easy', seq([0.05, 0.15, 0.25, 0.35]))
+    expect(g).toBe('0123') // floor([0.05,0.15,0.25,0.35]*10) = 0,1,2,3
+    expect(/^[0-9]{4}$/.test(g)).toBe(true)
+  })
+
+  it('easy：确定性，相同 rnd → 相同输出', () => {
+    const r = [0.1, 0.2, 0.3, 0.4]
+    expect(botGuess([], 4, 'easy', seq(r))).toBe(botGuess([], 4, 'easy', seq(r)))
+  })
+})
+
+describe('botGuess 普通档', () => {
+  it('normal：从候选集中选（rnd=0 取候选首个）', () => {
+    const guesses = [{ guess: '0123', feedback: 1 }]
+    const cands = filterByFacts(enumerateCandidates(4), guesses)
+    const g = botGuess(guesses, 4, 'normal', () => 0)
+    expect(g).toBe(cands[0])
+    expect(cands).toContain(g)
+  })
+
+  it('normal：所选猜测一定与历史反馈自洽（属于候选集）', () => {
+    const guesses = [{ guess: '0123', feedback: 0 }] // 0,1,2,3 不在各自位置
+    const cands = filterByFacts(enumerateCandidates(4), guesses)
+    const g = botGuess(guesses, 4, 'normal', () => 0.999)
+    expect(cands).toContain(g)
+  })
+
+  it('normal：候选为空（历史自相矛盾）时回退合法随机猜', () => {
+    const guesses = [
+      { guess: '0123', feedback: 4 }, // 秘密必为 0123
+      { guess: '0123', feedback: 0 }, // 又说全不对 → 矛盾，候选空
+    ]
+    const g = botGuess(guesses, 4, 'normal', seq([0, 0, 0, 0]))
+    expect(g).toHaveLength(4)
+    expect(/^[0-9]{4}$/.test(g)).toBe(true)
   })
 })
