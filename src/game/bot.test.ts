@@ -27,4 +27,14 @@ describe('randomSecret', () => {
     const r = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     expect(randomSecret(4, seq(r))).toBe(randomSecret(4, seq(r)))
   })
+
+  it('固定 rnd 序列 → 固定输出（证明输出确由 rnd 决定）', () => {
+    const r = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    expect(randomSecret(4, seq(r))).toBe('0846')
+  })
+
+  it('多次调用产生多种结果（确实随机，能杀死常量实现）', () => {
+    const seen = new Set(Array.from({ length: 50 }, () => randomSecret(4)))
+    expect(seen.size).toBeGreaterThan(1)
+  })
 })
