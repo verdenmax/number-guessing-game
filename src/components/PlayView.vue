@@ -11,6 +11,7 @@ const props = defineProps<{
   validate: (value: string) => ValidationResult
   history: { p1: GuessRecord[]; p2: GuessRecord[] }
   names?: { p1: string | null; p2: string | null }
+  botTurn?: boolean
 }>()
 const emit = defineEmits<{ guess: [value: string] }>()
 
@@ -30,12 +31,16 @@ const announceText = computed(() => {
   <div class="play">
     <p class="visually-hidden" role="status" aria-live="polite">{{ announceText }}</p>
     <GuessInput
+      v-if="!botTurn"
       :key="current"
       :digits="digits"
       :validate="validate"
       :label="`${sideName(current, names)}输入`"
       @confirm="onGuess"
     />
+    <p v-else class="bot-thinking" role="status" aria-live="polite">
+      <span aria-hidden="true">🤖</span> 电脑思考中…
+    </p>
     <section class="histories" aria-labelledby="play-hist-h">
       <h2 id="play-hist-h" class="visually-hidden">猜测记录</h2>
       <HistoryList :records="history.p1" :title="sideName('p1', names)" side="red" />
