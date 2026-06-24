@@ -46,6 +46,8 @@ export function botGuess(
 
 // 一步 minimax：对每个候选 g，按 feedback(s,g) 把候选集分桶，取最大桶（猜 g 后最坏剩余）；
 // 选使「最大桶最小」的 g。严格小于比较 → 平局保留候选序最前者（确定性）。
+// 注意：g 仅遍历候选集 C（不是全体字符串），是候选受限的 minimax——这样所选猜测既是最优分割、
+// 又可能直接命中，故并非全局 minimax，是有意为之。
 function minimaxGuess(candidates: string[]): string {
   let best = candidates[0]
   let bestWorst = Infinity
@@ -54,6 +56,7 @@ function minimaxGuess(candidates: string[]): string {
     let worst = 0
     for (const s of candidates) {
       const fb = feedback(s, g)
+      // s === g 落入全中（all-bulls）桶；该桶大小恒为 1，绝不会改变 argmin，无需特判。
       const n = (buckets.get(fb) ?? 0) + 1
       buckets.set(fb, n)
       if (n > worst) worst = n

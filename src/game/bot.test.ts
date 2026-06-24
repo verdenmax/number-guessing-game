@@ -104,19 +104,28 @@ describe('botGuess 困难档', () => {
     return w
   }
 
-  it('hard：返回候选集中「最坏剩余最小」的猜测', () => {
-    const guesses = [{ guess: '0123', feedback: 3 }]
+  it('hard：返回候选集中「最坏剩余最小」的猜测（有区分度种子，钉住最优）', () => {
+    const guesses = [
+      { guess: '0123', feedback: 2 },
+      { guess: '4567', feedback: 1 },
+    ]
     const C = filterByFacts(enumerateCandidates(4), guesses)
-    expect(C.length).toBeLessThanOrEqual(150) // 走 minimax 分支
+    expect(C.length).toBeLessThanOrEqual(150) // |C|=60，走 minimax
     const g = botGuess(guesses, 4, 'hard')
-    expect(C).toContain(g) // 只从候选选（既最优又可能直接命中）
+    expect(C).toContain(g)
+    // 精确钉住：candidates[0]='0137'(worst=30) 是次优，真 argmin='0168'(worst=28)
+    expect(g).toBe('0168')
     const gw = worstBucket(C, g)
-    for (const c of C) expect(gw).toBeLessThanOrEqual(worstBucket(C, c))
+    for (const c of C) expect(gw).toBeLessThanOrEqual(worstBucket(C, c)) // 现在有意义
   })
 
-  it('hard：平局取候选序最前者（确定性）', () => {
-    const guesses = [{ guess: '0123', feedback: 3 }]
+  it('hard：选择确定（同输入恒得同输出，含最早平局规则）', () => {
+    const guesses = [
+      { guess: '0123', feedback: 2 },
+      { guess: '4567', feedback: 1 },
+    ]
     expect(botGuess(guesses, 4, 'hard')).toBe(botGuess(guesses, 4, 'hard'))
+    expect(botGuess(guesses, 4, 'hard')).toBe('0168')
   })
 
   it('hard：候选过多(>150，如开局)时取候选首个，避免卡顿', () => {
