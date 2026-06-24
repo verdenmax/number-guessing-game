@@ -4,6 +4,8 @@ export interface GameConfig {
 
 export type Phase = 'setup' | 'playing' | 'over'
 
+export type GameMode = 'pvp' | 'pve'
+
 export type PlayerId = 'p1' | 'p2'
 
 export interface GuessRecord {
