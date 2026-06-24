@@ -87,14 +87,7 @@ Expected: FAIL — 无法解析 `./bot`（模块不存在）。
 Create `src/game/bot.ts`:
 
 ```typescript
-import type { GuessRecord } from './types'
-import { feedback } from './engine'
-import { enumerateCandidates, filterByFacts } from './solver'
-
 export type BotDifficulty = 'easy' | 'normal' | 'hard'
-
-// 困难档一步 minimax 的候选规模上限：超过则取候选首个，避免开局 O(n^2) 卡顿
-const HARD_MINIMAX_THRESHOLD = 150
 
 // 随机互不相同的 digits 位秘密：Fisher–Yates 洗牌 0-9，取前 digits 位。digits 必须 ≤ 10。
 export function randomSecret(digits: number, rnd: () => number = Math.random): string {
@@ -106,6 +99,8 @@ export function randomSecret(digits: number, rnd: () => number = Math.random): s
   return ds.slice(0, digits).join('')
 }
 ```
+
+（`randomSecret` 不依赖 solver/engine；`botGuess` 及其 import、`HARD_MINIMAX_THRESHOLD` 在 Task 2/3 渐进加入，保持每步无未使用符号。）
 
 - [ ] **Step 4: 跑测试确认通过**
 
@@ -185,7 +180,14 @@ Expected: FAIL — `botGuess` 未导出。
 
 - [ ] **Step 3: 写最小实现**
 
-Append to `src/game/bot.ts`:
+先在 `src/game/bot.ts` 顶部 import 区加入：
+
+```typescript
+import type { GuessRecord } from './types'
+import { enumerateCandidates, filterByFacts } from './solver'
+```
+
+再在文件末尾 append：
 
 ```typescript
 function randomGuess(digits: number, rnd: () => number): string {
@@ -292,7 +294,20 @@ Expected: FAIL — hard 当前走 normal 占位（随机），不满足「最坏
 
 - [ ] **Step 3: 写实现（替换占位，加入 minimax）**
 
-In `src/game/bot.ts`, 把 `botGuess` 末尾的 normal 占位逻辑替换为分档逻辑，并新增 `minimaxGuess`：
+先在 `src/game/bot.ts` 顶部 import 区加入 `feedback`：
+
+```typescript
+import { feedback } from './engine'
+```
+
+并在 `randomGuess` 之前加入阈值常量：
+
+```typescript
+// 困难档一步 minimax 的候选规模上限：超过则取候选首个，避免开局 O(n^2) 卡顿
+const HARD_MINIMAX_THRESHOLD = 150
+```
+
+然后把 `botGuess` 末尾的 normal 占位逻辑替换为分档逻辑，并新增 `minimaxGuess`：
 
 ```typescript
 // 将 botGuess 的最后一行（占位 return）替换为：
@@ -328,7 +343,7 @@ function minimaxGuess(candidates: string[]): string {
 }
 ```
 
-注意：`botGuess` 内原 `return candidates[Math.floor(rnd() * candidates.length)]` 这一行被上面的分档逻辑替换；`feedback` 已在 Task 1 的文件头 import。
+注意：`botGuess` 内原 `return candidates[Math.floor(rnd() * candidates.length)]` 这一行被上面的分档逻辑替换；`feedback` 与 `HARD_MINIMAX_THRESHOLD` 已在本步加入。
 
 - [ ] **Step 4: 跑测试确认通过**
 
