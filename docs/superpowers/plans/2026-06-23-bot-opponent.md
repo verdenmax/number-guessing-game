@@ -257,9 +257,9 @@ describe('botGuess 困难档', () => {
   }
 
   it('hard：返回候选集中「最坏剩余最小」的猜测', () => {
-    const guesses = [{ guess: '0123', feedback: 1 }]
+    const guesses = [{ guess: '0123', feedback: 3 }]
     const C = filterByFacts(enumerateCandidates(4), guesses)
-    expect(C.length).toBeLessThanOrEqual(150) // 走 minimax 分支
+    expect(C.length).toBeLessThanOrEqual(150) // 走 minimax 分支（feedback:3 → 24 候选；feedback:1 会是 1424 个 >150）
     const g = botGuess(guesses, 4, 'hard')
     expect(C).toContain(g) // 只从候选选（既最优又可能直接命中）
     const gw = worstBucket(C, g)
@@ -267,7 +267,7 @@ describe('botGuess 困难档', () => {
   })
 
   it('hard：平局取候选序最前者（确定性）', () => {
-    const guesses = [{ guess: '0123', feedback: 1 }]
+    const guesses = [{ guess: '0123', feedback: 3 }]
     expect(botGuess(guesses, 4, 'hard')).toBe(botGuess(guesses, 4, 'hard'))
   })
 
