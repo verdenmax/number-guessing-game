@@ -8,6 +8,7 @@ const props = defineProps<{
   digits: number
   validate: (value: string) => ValidationResult
   names?: { p1: string | null; p2: string | null }
+  vsBot?: boolean
 }>()
 const emit = defineEmits<{
   setSecret: [player: PlayerId, value: string]
@@ -22,7 +23,7 @@ const p2Name = ref(props.names?.p2 ?? '')
 function confirmP1(value: string) {
   emit('setName', 'p1', p1Name.value)
   emit('setSecret', 'p1', value)
-  step.value = 'handoff'
+  if (!props.vsBot) step.value = 'handoff'
 }
 function confirmP2(value: string) {
   emit('setName', 'p2', p2Name.value)
