@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useGame } from './composables/useGame'
 import { useHistory } from './composables/useHistory'
 import { buildGameRecord } from './history/record'
 import { saveGame } from './history/store'
-import type { PlayerId } from './game/types'
+import type { GameMode, PlayerId } from './game/types'
 import type { GameRecord } from './history/types'
+import { botGuess, randomSecret, type BotDifficulty } from './game/bot'
+import ModeSelect from './components/ModeSelect.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
@@ -22,6 +24,59 @@ const names = ref<{ p1: string | null; p2: string | null }>({ p1: null, p2: null
 const applyName = (p: PlayerId, n: string) => {
   names.value[p] = n.trim() || null
 }
+
+const gameMode = ref<GameMode | null>(null)
+const botDifficulty = ref<BotDifficulty>('normal')
+const botName = computed(
+  () => '🤖 电脑·' + ({ easy: '简单', normal: '普通', hard: '困难' } as const)[botDifficulty.value],
+)
+
+function onSelectMode(mode: GameMode, difficulty?: BotDifficulty) {
+  gameMode.value = mode
+  if (mode === 'pve') {
+    botDifficulty.value = difficulty ?? 'normal'
+    applyName('p2', botName.value)
+  }
+}
+
+// pve：玩家(p1)设秘密后，自动为 bot(p2)设随机秘密 → 进入对战
+watch(
+  () => state.value.secrets.p1,
+  (p1secret) => {
+    if (
+      gameMode.value === 'pve' &&
+      p1secret !== null &&
+      state.value.secrets.p2 === null &&
+      phase.value === 'setup'
+    ) {
+      applySecret('p2', randomSecret(config.value.digits))
+    }
+  },
+)
+
+const botTurn = computed(() => gameMode.value === 'pve' && current.value === 'p2')
+
+let botTimer: ReturnType<typeof setTimeout> | null = null
+function clearBotTimer() {
+  if (botTimer !== null) {
+    clearTimeout(botTimer)
+    botTimer = null
+  }
+}
+
+// pve：轮到 bot(p2) 时延迟出招；每次状态变化先清旧定时器防重入/串台
+// 仅依赖 [phase, current]：gameMode 在一局进行中(playing)不会改变（playAgain 同步置 null 且 reset 令 current=p1），故无需作为依赖
+watch([phase, current], ([ph, cur]) => {
+  clearBotTimer()
+  if (gameMode.value === 'pve' && ph === 'playing' && cur === 'p2') {
+    botTimer = setTimeout(() => {
+      botTimer = null
+      applyGuess(botGuess(state.value.history.p2, config.value.digits, botDifficulty.value))
+    }, 800)
+  }
+})
+
+onUnmounted(clearBotTimer)
 
 const saved = ref(false)
 const saveStatus = ref<'saving' | 'saved' | 'error'>('saving')
@@ -40,7 +95,10 @@ watch(phase, async (p) => {
 })
 
 function playAgain() {
-  reset() // 重置秘密数/历史/回合/outcome，回到 setup；保留 names
+  clearBotTimer()
+  if (gameMode.value === 'pve') names.value.p2 = null // 清 bot 名，避免 pve→pvp 再战时蓝方残留「🤖 电脑·X」
+  reset() // 重置秘密数/历史/回合/outcome；保留 names（pvp 再选双人后仍预填）
+  gameMode.value = null // 回到模式选择
   saved.value = false
   saveStatus.value = 'saving'
 }
@@ -84,11 +142,14 @@ const activeSide = computed(() => {
             </nav>
           </header>
 
+          <ModeSelect v-if="gameMode === null" @select="onSelectMode" />
+
           <SetupView
-            v-if="phase === 'setup'"
+            v-else-if="phase === 'setup'"
             :digits="config.digits"
             :validate="checkSecret"
             :names="names"
+            :vs-bot="gameMode === 'pve'"
             @set-secret="applySecret"
             @set-name="applyName"
           />
@@ -100,6 +161,7 @@ const activeSide = computed(() => {
             :validate="checkGuess"
             :history="state.history"
             :names="names"
+            :bot-turn="botTurn"
             @guess="applyGuess"
           />
 

@@ -94,4 +94,22 @@ describe('PlayView', () => {
     expect(w.text()).toContain('红方')
     expect(w.text()).toContain('蓝方')
   })
+
+  it('botTurn：隐藏玩家输入，显示「电脑思考中」', () => {
+    const w = mount(PlayView, { props: { ...baseProps, current: 'p2' as const, botTurn: true } })
+    expect(w.findComponent(GuessInput).exists()).toBe(false)
+    expect(w.find('.bot-thinking').exists()).toBe(true)
+    expect(w.find('.bot-thinking').text()).toContain('电脑思考中')
+  })
+
+  it('非 botTurn：照常显示玩家输入', () => {
+    const w = mount(PlayView, { props: { ...baseProps, botTurn: false } })
+    expect(w.findComponent(GuessInput).exists()).toBe(true)
+    expect(w.find('.bot-thinking').exists()).toBe(false)
+  })
+
+  it('botTurn：思考提示的 emoji 对读屏隐藏（纯视觉，不读出表情符号）', () => {
+    const w = mount(PlayView, { props: { ...baseProps, current: 'p2' as const, botTurn: true } })
+    expect(w.find('.bot-thinking [aria-hidden="true"]').exists()).toBe(true)
+  })
 })

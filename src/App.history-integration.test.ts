@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import App from './App.vue'
+import ModeSelect from './components/ModeSelect.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import HistoryView from './components/HistoryView.vue'
@@ -12,6 +13,8 @@ import type { GameRecord } from './history/types'
 // 捕获“记录残留 Vue 响应式 Proxy → saveGame 结构化克隆抛 DataCloneError → 历史静默保存失败”
 // 这一类回归——仅 mock store 的测试无法发现。
 async function playToWin(w: ReturnType<typeof mount>) {
+  w.findComponent(ModeSelect).vm.$emit('select', 'pvp')
+  await w.vm.$nextTick()
   w.findComponent(SetupView).vm.$emit('setName', 'p1', 'Alice')
   w.findComponent(SetupView).vm.$emit('setSecret', 'p1', '0123')
   w.findComponent(SetupView).vm.$emit('setSecret', 'p2', '4567')

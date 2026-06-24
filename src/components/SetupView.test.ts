@@ -88,4 +88,13 @@ describe('SetupView', () => {
     await w.vm.$nextTick()
     expect((w.find('.name-field input').element as HTMLInputElement).value).toBe('蓝妹')
   })
+
+  it('vsBot：确认红方后不进交接屏（等待 App 自动设 bot 秘密）', async () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate, vsBot: true } })
+    expect(w.find('legend').text()).toContain('红方')
+    w.findComponent(SecretInput).vm.$emit('confirm', '1234')
+    await w.vm.$nextTick()
+    expect(w.findComponent(HandoffScreen).exists()).toBe(false)
+    expect(w.emitted('setSecret')).toEqual([['p1', '1234']])
+  })
 })
