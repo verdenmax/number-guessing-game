@@ -138,3 +138,18 @@ function onInput(e: Event) {
 ```
 
 当用户键入非法字符（如字母）时，过滤后的 `clean` 可能与 Vue 内部记录的旧值相同，导致 `:value` 不触发更新、DOM 里残留非法字符。**手动 `el.value = clean` 回写**确保输入框始终只显示过滤后的数字，避免受控输入的边界 bug。
+
+## 模式选择与人机对战（pve）
+
+开局先渲染 `ModeSelect.vue`（`gameMode===null` 时，置于 `<main>` 内、保留顶部标题与历史入口）：
+
+- **双人(热座)**：`emit('select','pvp')` → 进入原 SetupView 红蓝轮流流程。
+- **人机对战**：展开难度（简单/普通/困难）→ `emit('select','pve', 难度)`。
+
+`App.vue` 持有 `gameMode`/`botDifficulty`，pve 下：
+
+- `SetupView :vs-bot` 只走玩家一步（确认后不进交接屏，等 App 自动设 bot 秘密）。
+- `PlayView :bot-turn` 在 bot 回合隐藏玩家输入、显示「🤖 电脑思考中…」。
+- bot 由两个 watch 驱动（自动设秘密 + 延迟出招），engine 不变。详见 [L3 人机对战策略](../L3-details/bot-strategy.md)、[L4 bot API](../L4-api/bot.md)。
+
+再战回到模式选择（`gameMode=null`，保留昵称），统一 `clearBotTimer()` 防串台。
