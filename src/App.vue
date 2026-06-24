@@ -6,7 +6,7 @@ import { buildGameRecord } from './history/record'
 import { saveGame } from './history/store'
 import type { GameMode, PlayerId } from './game/types'
 import type { GameRecord } from './history/types'
-import type { BotDifficulty } from './game/bot'
+import { randomSecret, type BotDifficulty } from './game/bot'
 import ModeSelect from './components/ModeSelect.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
@@ -38,6 +38,23 @@ function onSelectMode(mode: GameMode, difficulty?: BotDifficulty) {
     applyName('p2', botName.value)
   }
 }
+
+// pve：玩家(p1)设秘密后，自动为 bot(p2)设随机秘密 → 进入对战
+watch(
+  () => state.value.secrets.p1,
+  (p1secret) => {
+    if (
+      gameMode.value === 'pve' &&
+      p1secret !== null &&
+      state.value.secrets.p2 === null &&
+      phase.value === 'setup'
+    ) {
+      applySecret('p2', randomSecret(config.value.digits))
+    }
+  },
+)
+
+const botTurn = computed(() => gameMode.value === 'pve' && current.value === 'p2')
 
 const saved = ref(false)
 const saveStatus = ref<'saving' | 'saved' | 'error'>('saving')
@@ -120,6 +137,7 @@ const activeSide = computed(() => {
             :validate="checkGuess"
             :history="state.history"
             :names="names"
+            :bot-turn="botTurn"
             @guess="applyGuess"
           />
 
