@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { botGuess, randomSecret } from './bot'
 import { enumerateCandidates, filterByFacts } from './solver'
+import { feedback } from './engine'
 
 // 返回固定序列的确定性 rnd（循环复用）
 function seq(values: number[]): () => number {
@@ -86,5 +87,49 @@ describe('botGuess 普通档', () => {
     const g = botGuess(guesses, 4, 'normal', seq([0, 0, 0, 0]))
     expect(g).toBe('0000') // 固定回退输出（重复数字，绝不可能来自 distinct 候选路径）
     expect(/^[0-9]{4}$/.test(g)).toBe(true)
+  })
+})
+
+describe('botGuess 困难档', () => {
+  // 给定候选集 C，返回猜 x 时的最坏剩余桶大小
+  function worstBucket(C: string[], x: string): number {
+    const m = new Map<number, number>()
+    let w = 0
+    for (const s of C) {
+      const f = feedback(s, x)
+      const n = (m.get(f) ?? 0) + 1
+      m.set(f, n)
+      if (n > w) w = n
+    }
+    return w
+  }
+
+  it('hard：返回候选集中「最坏剩余最小」的猜测', () => {
+    const guesses = [{ guess: '0123', feedback: 3 }]
+    const C = filterByFacts(enumerateCandidates(4), guesses)
+    expect(C.length).toBeLessThanOrEqual(150) // 走 minimax 分支
+    const g = botGuess(guesses, 4, 'hard')
+    expect(C).toContain(g) // 只从候选选（既最优又可能直接命中）
+    const gw = worstBucket(C, g)
+    for (const c of C) expect(gw).toBeLessThanOrEqual(worstBucket(C, c))
+  })
+
+  it('hard：平局取候选序最前者（确定性）', () => {
+    const guesses = [{ guess: '0123', feedback: 3 }]
+    expect(botGuess(guesses, 4, 'hard')).toBe(botGuess(guesses, 4, 'hard'))
+  })
+
+  it('hard：候选过多(>150，如开局)时取候选首个，避免卡顿', () => {
+    const g = botGuess([], 4, 'hard') // 空历史 → C = 全部 5040
+    expect(g).toBe(enumerateCandidates(4)[0]) // '0123'
+  })
+
+  it('hard：候选为空时回退合法随机猜', () => {
+    const guesses = [
+      { guess: '0123', feedback: 4 },
+      { guess: '4567', feedback: 4 },
+    ] // 互斥 → 候选空
+    const g = botGuess(guesses, 4, 'hard', seq([0, 0, 0, 0]))
+    expect(g).toHaveLength(4)
   })
 })

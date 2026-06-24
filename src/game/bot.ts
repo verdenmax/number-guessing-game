@@ -1,5 +1,6 @@
 import type { GuessRecord } from './types'
 import { enumerateCandidates, filterByFacts } from './solver'
+import { feedback } from './engine'
 
 export type BotDifficulty = 'easy' | 'normal' | 'hard'
 
@@ -12,6 +13,9 @@ export function randomSecret(digits: number, rnd: () => number = Math.random): s
   }
   return ds.slice(0, digits).join('')
 }
+
+// 困难档一步 minimax 的候选规模上限：超过则取候选首个，避免开局 O(n^2) 卡顿
+const HARD_MINIMAX_THRESHOLD = 150
 
 function randomGuess(digits: number, rnd: () => number): string {
   let s = ''
@@ -31,6 +35,33 @@ export function botGuess(
   const candidates = filterByFacts(enumerateCandidates(digits), guesses)
   if (candidates.length === 0) return randomGuess(digits, rnd)
 
-  // normal：从候选随机；hard 在 Task 3 实现，暂同 normal 占位（下一个任务替换）
-  return candidates[Math.floor(rnd() * candidates.length)]
+  if (difficulty === 'normal') {
+    return candidates[Math.floor(rnd() * candidates.length)]
+  }
+
+  // hard
+  if (candidates.length > HARD_MINIMAX_THRESHOLD) return candidates[0]
+  return minimaxGuess(candidates)
+}
+
+// 一步 minimax：对每个候选 g，按 feedback(s,g) 把候选集分桶，取最大桶（猜 g 后最坏剩余）；
+// 选使「最大桶最小」的 g。严格小于比较 → 平局保留候选序最前者（确定性）。
+function minimaxGuess(candidates: string[]): string {
+  let best = candidates[0]
+  let bestWorst = Infinity
+  for (const g of candidates) {
+    const buckets = new Map<number, number>()
+    let worst = 0
+    for (const s of candidates) {
+      const fb = feedback(s, g)
+      const n = (buckets.get(fb) ?? 0) + 1
+      buckets.set(fb, n)
+      if (n > worst) worst = n
+    }
+    if (worst < bestWorst) {
+      bestWorst = worst
+      best = g
+    }
+  }
+  return best
 }
