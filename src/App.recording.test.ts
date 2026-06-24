@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import * as store from './history/store'
 import App from './App.vue'
+import ModeSelect from './components/ModeSelect.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
@@ -13,6 +14,8 @@ vi.mock('./history/store')
 const mockStore = vi.mocked(store)
 
 async function playToWin(w: ReturnType<typeof mount>) {
+  w.findComponent(ModeSelect).vm.$emit('select', 'pvp')
+  await w.vm.$nextTick()
   w.findComponent(SetupView).vm.$emit('setSecret', 'p1', '1234')
   w.findComponent(SetupView).vm.$emit('setSecret', 'p2', '5678')
   await w.vm.$nextTick()
@@ -62,6 +65,8 @@ describe('App 录入历史', () => {
 
   it('记录昵称：setName 后保存的 names 反映昵称（空串→null）', async () => {
     const w = mount(App)
+    w.findComponent(ModeSelect).vm.$emit('select', 'pvp')
+    await w.vm.$nextTick()
     w.findComponent(SetupView).vm.$emit('setName', 'p1', 'Alice')
     w.findComponent(SetupView).vm.$emit('setSecret', 'p1', '1234')
     w.findComponent(SetupView).vm.$emit('setName', 'p2', '')

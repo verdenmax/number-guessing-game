@@ -4,8 +4,10 @@ import { useGame } from './composables/useGame'
 import { useHistory } from './composables/useHistory'
 import { buildGameRecord } from './history/record'
 import { saveGame } from './history/store'
-import type { PlayerId } from './game/types'
+import type { GameMode, PlayerId } from './game/types'
 import type { GameRecord } from './history/types'
+import type { BotDifficulty } from './game/bot'
+import ModeSelect from './components/ModeSelect.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
@@ -21,6 +23,20 @@ const {
 const names = ref<{ p1: string | null; p2: string | null }>({ p1: null, p2: null })
 const applyName = (p: PlayerId, n: string) => {
   names.value[p] = n.trim() || null
+}
+
+const gameMode = ref<GameMode | null>(null)
+const botDifficulty = ref<BotDifficulty>('normal')
+const botName = computed(
+  () => '🤖 电脑·' + ({ easy: '简单', normal: '普通', hard: '困难' } as const)[botDifficulty.value],
+)
+
+function onSelectMode(mode: GameMode, difficulty?: BotDifficulty) {
+  gameMode.value = mode
+  if (mode === 'pve') {
+    botDifficulty.value = difficulty ?? 'normal'
+    applyName('p2', botName.value)
+  }
 }
 
 const saved = ref(false)
@@ -40,7 +56,8 @@ watch(phase, async (p) => {
 })
 
 function playAgain() {
-  reset() // 重置秘密数/历史/回合/outcome，回到 setup；保留 names
+  reset() // 重置秘密数/历史/回合/outcome；保留 names（pvp 再选双人后仍预填）
+  gameMode.value = null // 回到模式选择
   saved.value = false
   saveStatus.value = 'saving'
 }
@@ -84,11 +101,14 @@ const activeSide = computed(() => {
             </nav>
           </header>
 
+          <ModeSelect v-if="gameMode === null" @select="onSelectMode" />
+
           <SetupView
-            v-if="phase === 'setup'"
+            v-else-if="phase === 'setup'"
             :digits="config.digits"
             :validate="checkSecret"
             :names="names"
+            :vs-bot="gameMode === 'pve'"
             @set-secret="applySecret"
             @set-name="applyName"
           />
