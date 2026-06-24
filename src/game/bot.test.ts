@@ -51,6 +51,14 @@ describe('botGuess 简单档', () => {
     const r = [0.1, 0.2, 0.3, 0.4]
     expect(botGuess([], 4, 'easy', seq(r))).toBe(botGuess([], 4, 'easy', seq(r)))
   })
+
+  it('easy：即使存在候选约束也忽略它（可产出重复数字的非候选）', () => {
+    const guesses = [{ guess: '0123', feedback: 1 }] // 存在约束
+    const g = botGuess(guesses, 4, 'easy', seq([0, 0, 0, 0]))
+    expect(g).toBe('0000')
+    // '0000' 含重复数字，绝不在 distinct 候选集中 → 证明 easy 绕过候选过滤
+    expect(filterByFacts(enumerateCandidates(4), guesses)).not.toContain('0000')
+  })
 })
 
 describe('botGuess 普通档', () => {
@@ -74,8 +82,9 @@ describe('botGuess 普通档', () => {
       { guess: '0123', feedback: 4 }, // 秘密必为 0123
       { guess: '0123', feedback: 0 }, // 又说全不对 → 矛盾，候选空
     ]
+    expect(filterByFacts(enumerateCandidates(4), guesses)).toHaveLength(0) // 前置：确实矛盾
     const g = botGuess(guesses, 4, 'normal', seq([0, 0, 0, 0]))
-    expect(g).toHaveLength(4)
+    expect(g).toBe('0000') // 固定回退输出（重复数字，绝不可能来自 distinct 候选路径）
     expect(/^[0-9]{4}$/.test(g)).toBe(true)
   })
 })
