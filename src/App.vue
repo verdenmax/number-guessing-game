@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useGame } from './composables/useGame'
 import { useHistory } from './composables/useHistory'
 import { buildGameRecord } from './history/record'
 import { saveGame } from './history/store'
 import type { GameMode, PlayerId } from './game/types'
 import type { GameRecord } from './history/types'
-import { randomSecret, type BotDifficulty } from './game/bot'
+import { botGuess, randomSecret, type BotDifficulty } from './game/bot'
 import ModeSelect from './components/ModeSelect.vue'
 import SetupView from './components/SetupView.vue'
 import PlayView from './components/PlayView.vue'
@@ -56,6 +56,27 @@ watch(
 
 const botTurn = computed(() => gameMode.value === 'pve' && current.value === 'p2')
 
+let botTimer: ReturnType<typeof setTimeout> | null = null
+function clearBotTimer() {
+  if (botTimer !== null) {
+    clearTimeout(botTimer)
+    botTimer = null
+  }
+}
+
+// pve：轮到 bot(p2) 时延迟出招；每次状态变化先清旧定时器防重入/串台
+watch([phase, current], ([ph, cur]) => {
+  clearBotTimer()
+  if (gameMode.value === 'pve' && ph === 'playing' && cur === 'p2') {
+    botTimer = setTimeout(() => {
+      botTimer = null
+      applyGuess(botGuess(state.value.history.p2, config.value.digits, botDifficulty.value))
+    }, 800)
+  }
+})
+
+onUnmounted(clearBotTimer)
+
 const saved = ref(false)
 const saveStatus = ref<'saving' | 'saved' | 'error'>('saving')
 
@@ -73,6 +94,8 @@ watch(phase, async (p) => {
 })
 
 function playAgain() {
+  clearBotTimer()
+  if (gameMode.value === 'pve') names.value.p2 = null // 清 bot 名，避免 pve→pvp 再战时蓝方残留「🤖 电脑·X」
   reset() // 重置秘密数/历史/回合/outcome；保留 names（pvp 再选双人后仍预填）
   gameMode.value = null // 回到模式选择
   saved.value = false
