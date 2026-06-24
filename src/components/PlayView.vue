@@ -38,7 +38,7 @@ const announceText = computed(() => {
       :label="`${sideName(current, names)}输入`"
       @confirm="onGuess"
     />
-    <p v-else class="bot-thinking" role="status" aria-live="polite">
+    <p v-else class="bot-thinking">
       <span aria-hidden="true">🤖</span> 电脑思考中…
     </p>
     <section class="histories" aria-labelledby="play-hist-h">

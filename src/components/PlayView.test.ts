@@ -107,4 +107,9 @@ describe('PlayView', () => {
     expect(w.findComponent(GuessInput).exists()).toBe(true)
     expect(w.find('.bot-thinking').exists()).toBe(false)
   })
+
+  it('botTurn：思考提示的 emoji 对读屏隐藏（纯视觉，不读出表情符号）', () => {
+    const w = mount(PlayView, { props: { ...baseProps, current: 'p2' as const, botTurn: true } })
+    expect(w.find('.bot-thinking [aria-hidden="true"]').exists()).toBe(true)
+  })
 })
