@@ -1182,6 +1182,7 @@ Append to `src/style.css`（文件末尾）:
   border-color: var(--primary);
   box-shadow: var(--shadow);
   transform: translateY(-1px);
+  background: var(--card);
 }
 .mode-btn:focus-visible {
   outline: 3px solid var(--primary);
@@ -1228,6 +1229,7 @@ Append to `src/style.css`（文件末尾）:
   background: var(--primary);
   color: #fff;
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
 }
 .difficulty-actions .start-pve:hover {
@@ -1241,6 +1243,11 @@ Append to `src/style.css`（文件末尾）:
   color: var(--text);
   font: inherit;
   cursor: pointer;
+}
+.difficulty-actions .start-pve:focus-visible,
+.difficulty-actions .back-mode:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* ---------- Bot thinking indicator（电脑思考中） ---------- */
