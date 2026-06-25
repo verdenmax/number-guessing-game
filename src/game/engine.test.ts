@@ -36,6 +36,41 @@ describe('feedback', () => {
   })
 })
 
+describe('digit 边界完整对局（状态机端到端）', () => {
+  it('digits=1：设秘密 → 猜中 → 结算（最小配置走通状态机）', () => {
+    let s = createGame({ digits: 1 })
+    s = setSecret(s, 'p1', '5')
+    s = setSecret(s, 'p2', '3')
+    expect(s.phase).toBe('playing')
+    s = submitGuess(s, '3') // p1 命中 p2(3)
+    expect(s.phase).toBe('playing') // 等 p2 完成本回合
+    s = submitGuess(s, '0') // p2 猜 0 ≠ p1(5)，未中 → p1 胜
+    expect(s.phase).toBe('over')
+    expect(s.outcome).toEqual({ kind: 'win', winner: 'p1' })
+  })
+
+  it('digits=10：设 10 位排列秘密 → 猜中 → 结算（最大配置走通状态机）', () => {
+    let s = createGame({ digits: 10 })
+    s = setSecret(s, 'p1', '0123456789')
+    s = setSecret(s, 'p2', '9876543210')
+    expect(s.phase).toBe('playing')
+    s = submitGuess(s, '9876543210') // p1 命中 p2（feedback=10）
+    expect(s.phase).toBe('playing')
+    s = submitGuess(s, '1023456789') // p2 与 p1(0123456789) 仅前两位互换 → 8 中，未达 10
+    expect(s.phase).toBe('over')
+    expect(s.outcome).toEqual({ kind: 'win', winner: 'p1' })
+  })
+
+  it('digits=10：同回合双方都猜中 → 平局', () => {
+    let s = createGame({ digits: 10 })
+    s = setSecret(s, 'p1', '0123456789')
+    s = setSecret(s, 'p2', '9876543210')
+    s = submitGuess(s, '9876543210') // p1 命中
+    s = submitGuess(s, '0123456789') // p2 命中 → 双中平局
+    expect(s.outcome).toEqual({ kind: 'draw' })
+  })
+})
+
 describe('createGame', () => {
   it('默认位数为 4', () => {
     expect(createGame().config.digits).toBe(4)

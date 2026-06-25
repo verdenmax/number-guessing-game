@@ -162,6 +162,31 @@ describe('SolverPanel 交互', () => {
     await w.find('.solver-menu-backdrop').trigger('click')
     expect(w.find('.solver-menu').exists()).toBe(false)
   })
+
+  it('菜单方向键在可用选项间循环移动焦点（a11y menu 模式）', async () => {
+    const w = mount(SolverPanel, {
+      props: { digits: 4, guesses: noGuesses, side: 'red' },
+      attachTo: document.body,
+    })
+    await w.find('.solver-toggle').trigger('click')
+    await open(w, 0)
+    await w.vm.$nextTick()
+    const items = () => w.findAll('.solver-menu [role="menuitem"]:not([disabled])').map((x) => x.element)
+    const menu = w.find('.solver-menu')
+    // 打开后焦点落在首项；clear 默认禁用 → 可用项为 assume/cross 两项
+    expect(document.activeElement).toBe(items()[0])
+    await menu.trigger('keydown', { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(items()[1])
+    await menu.trigger('keydown', { key: 'ArrowDown' }) // 循环回首项
+    expect(document.activeElement).toBe(items()[0])
+    await menu.trigger('keydown', { key: 'ArrowUp' }) // 循环到末项
+    expect(document.activeElement).toBe(items()[items().length - 1])
+    await menu.trigger('keydown', { key: 'Home' })
+    expect(document.activeElement).toBe(items()[0])
+    await menu.trigger('keydown', { key: 'End' })
+    expect(document.activeElement).toBe(items()[items().length - 1])
+    w.unmount()
+  })
 })
 
 describe('SolverPanel what-if 集成', () => {

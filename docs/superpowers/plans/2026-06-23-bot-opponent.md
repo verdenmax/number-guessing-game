@@ -1,5 +1,7 @@
 # 人机对战（Bot Opponent）Implementation Plan
 
+> ⚠️ **历史快照**：本计划描述的困难档选猜「`|C|>150` 取 `candidates[0]`、minimax 平局取候选序最前者（确定性）」已于 2026-06-25 **去偏置**（改为经 `rnd` 随机取，消除「开局必为 0123、偏向小数」问题）。当前行为以 [L3 人机对战策略](../../L3-details/bot-strategy.md) 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在开局新增「双人(热座) / 人机对战」选择；人机模式下玩家先手对战一个复用现有 solver 的 AI（简单/普通/困难三档），引擎保持纯净不改。

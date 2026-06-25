@@ -30,6 +30,15 @@ describe('history store: save/list/clear', () => {
     expect(all.map((r) => r.id)).toEqual(['a'])
   })
 
+  it('listGames 跳过结构损坏的记录（前向兼容/防 DevTools 篡改，不致整页渲染崩溃）', async () => {
+    await saveGame(rec('good', 2000))
+    // 缺 secrets/history/outcome 的损坏记录（如未来 schema 变化或被篡改）
+    await saveGame({ id: 'bad', playedAt: 3000 } as unknown as GameRecord)
+    const all = await listGames()
+    expect(all.map((r) => r.id)).toContain('good')
+    expect(all.map((r) => r.id)).not.toContain('bad')
+  })
+
   it('多条按 playedAt 倒序返回（最新在前）', async () => {
     await saveGame(rec('old', 1000))
     await saveGame(rec('new', 3000))

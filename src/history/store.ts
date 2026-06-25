@@ -22,7 +22,15 @@ function openDB(): Promise<IDBDatabase> {
         store.createIndex(INDEX, 'playedAt')
       }
     }
-    req.onsuccess = () => resolve(req.result)
+    req.onsuccess = () => {
+      const db = req.result
+      // 另一 tab 触发版本升级时主动关闭，避免阻塞其升级；连接被关闭则清缓存，下次调用自动重连（自愈）
+      db.onversionchange = () => db.close()
+      db.onclose = () => {
+        if (dbPromise === p) dbPromise = null
+      }
+      resolve(db)
+    }
     req.onerror = () => reject(req.error ?? new Error('IndexedDB open failed'))
     req.onblocked = () => reject(new Error('IndexedDB open blocked'))
   })
@@ -45,6 +53,25 @@ export async function saveGame(record: GameRecord): Promise<void> {
   })
 }
 
+// 渲染前的结构校验：损坏/未来 schema 的记录直接跳过，避免后续 outcome/secrets/history 解引用导致整页崩溃
+function isValidRecord(v: unknown): v is GameRecord {
+  if (typeof v !== 'object' || v === null) return false
+  const r = v as Record<string, unknown>
+  const h = r.history as Record<string, unknown> | undefined
+  return (
+    typeof r.id === 'string' &&
+    typeof r.playedAt === 'number' &&
+    typeof r.secrets === 'object' &&
+    r.secrets !== null &&
+    typeof r.outcome === 'object' &&
+    r.outcome !== null &&
+    typeof h === 'object' &&
+    h !== null &&
+    Array.isArray(h.p1) &&
+    Array.isArray(h.p2)
+  )
+}
+
 export async function listGames(): Promise<GameRecord[]> {
   const db = await openDB()
   return new Promise((resolve, reject) => {
@@ -55,7 +82,7 @@ export async function listGames(): Promise<GameRecord[]> {
     cursorReq.onsuccess = () => {
       const cursor = cursorReq.result
       if (cursor) {
-        out.push(cursor.value as GameRecord)
+        if (isValidRecord(cursor.value)) out.push(cursor.value)
         cursor.continue()
       } else {
         resolve(out)

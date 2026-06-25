@@ -107,6 +107,27 @@ function onMenuFocusOut(e: FocusEvent) {
   triggerEl = null
 }
 
+// 菜单键盘导航：Esc 关闭；Up/Down 在可用菜单项间循环；Home/End 跳首尾（满足 role="menu" 契约）
+function onMenuKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    closeMenu()
+    return
+  }
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return
+  e.preventDefault()
+  const items = Array.from(
+    menuEl.value?.querySelectorAll<HTMLButtonElement>('button[role="menuitem"]:not([disabled])') ?? [],
+  )
+  if (items.length === 0) return
+  const cur = items.indexOf(document.activeElement as HTMLButtonElement)
+  let idx: number
+  if (e.key === 'Home') idx = 0
+  else if (e.key === 'End') idx = items.length - 1
+  else if (e.key === 'ArrowDown') idx = cur < 0 ? 0 : (cur + 1) % items.length
+  else idx = cur <= 0 ? items.length - 1 : cur - 1 // ArrowUp
+  items[idx]?.focus()
+}
+
 function chooseAssume() {
   const m = menuFor.value
   if (!m) return
@@ -268,7 +289,7 @@ function reset() {
           class="solver-menu"
           role="menu"
           :style="menuStyle"
-          @keydown.esc="closeMenu"
+          @keydown="onMenuKeydown"
           @focusout="onMenuFocusOut"
         >
           <button type="button" role="menuitem" class="solver-menu-item" data-act="assume" @click="chooseAssume">
