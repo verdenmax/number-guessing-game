@@ -9,6 +9,7 @@ const props = defineProps<{
   validate: (value: string) => ValidationResult
   names?: { p1: string | null; p2: string | null }
   vsBot?: boolean
+  p1Done?: boolean
 }>()
 const emit = defineEmits<{
   setSecret: [player: PlayerId, value: string]
@@ -16,7 +17,9 @@ const emit = defineEmits<{
 }>()
 
 type Step = 'p1' | 'handoff' | 'p2'
-const step = ref<Step>('p1')
+// p1Done：红方秘密已设（如看历史后重挂载）。pvp 下从交接屏续上，避免回到 'p1' 重设导致
+// setSecret 对已设玩家抛错而软锁定；vsBot 下 p1 设好即进对战、不会停在 setup，故仅 pvp 生效。
+const step = ref<Step>(props.p1Done && !props.vsBot ? 'handoff' : 'p1')
 const p1Name = ref(props.names?.p1 ?? '')
 const p2Name = ref(props.names?.p2 ?? '')
 

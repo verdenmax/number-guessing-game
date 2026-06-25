@@ -1,5 +1,6 @@
 // 历史时间紧凑格式：本地时区 "MM-DD HH:mm"（同年省略年份；跨年补 "YYYY-"），比 toLocaleString 简洁
 export function formatPlayedAt(ms: number): string {
+  if (!Number.isFinite(ms)) return '—' // 防损坏/缺失 playedAt 渲染出 "NaN-NaN NaN:NaN"
   const d = new Date(ms)
   const p = (n: number) => String(n).padStart(2, '0')
   const md = `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`

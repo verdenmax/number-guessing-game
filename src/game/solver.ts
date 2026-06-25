@@ -48,20 +48,28 @@ export interface SolverInput {
 
 export type Grid = CellState[][]
 
+// 候选 c 是否满足「假设 + 划除」约束（what-if 过滤判据）。assumptions 仅对 0-9 的有效值施加。
+function matchesWhatif(
+  c: string,
+  digits: number,
+  assumptions: (number | null)[],
+  crossedOut: Set<string>,
+): boolean {
+  for (let i = 0; i < digits; i++) {
+    const a = assumptions[i]
+    if (a != null && a >= 0 && a <= 9 && c[i] !== String(a)) return false
+  }
+  for (const key of crossedOut) {
+    const [p, d] = key.split('-')
+    if (c[Number(p)] === d) return false
+  }
+  return true
+}
+
 function computeFactAndWhatif(input: SolverInput): { factPossible: string[]; whatif: string[] } {
   const { digits, guesses, assumptions, crossedOut } = input
   const factPossible = filterByFacts(enumerateCandidates(digits), guesses)
-  const whatif = factPossible.filter((c) => {
-    for (let i = 0; i < digits; i++) {
-      const a = assumptions[i]
-      if (a != null && a >= 0 && a <= 9 && c[i] !== String(a)) return false
-    }
-    for (const key of crossedOut) {
-      const [p, d] = key.split('-')
-      if (c[Number(p)] === d) return false
-    }
-    return true
-  })
+  const whatif = factPossible.filter((c) => matchesWhatif(c, digits, assumptions, crossedOut))
   return { factPossible, whatif }
 }
 
@@ -83,6 +91,25 @@ export function solve(input: SolverInput): Grid {
   // 避免整片置灰；只有冲突的假设格标红。
   const derivedDigitsAt = whatifEmpty ? factDigitsAt : whatifDigitsAt
 
+  // what-if 空（假设组合无解）时，精确归因冲突：只把「真正参与冲突」的假设格标红，
+  // 避免无辜假设格（如三个假设里仅两个互斥，第三个被连累）也被误标红。
+  // 判据：该假设值本身即与事实矛盾（自身不可能），或移除它后 what-if 重新有解（它是冲突的必要成员）。
+  const conflictPositions = new Set<number>()
+  if (whatifEmpty) {
+    for (let pos = 0; pos < digits; pos++) {
+      const a = assumptions[pos]
+      if (a == null || a < 0 || a > 9) continue
+      if (!factDigitsAt[pos].has(String(a))) {
+        conflictPositions.add(pos)
+        continue
+      }
+      const reduced = assumptions.map((x, i) => (i === pos ? null : x))
+      if (factPossible.some((c) => matchesWhatif(c, digits, reduced, crossedOut))) {
+        conflictPositions.add(pos)
+      }
+    }
+  }
+
   const grid: Grid = []
   for (let pos = 0; pos < digits; pos++) {
     const col: CellState[] = []
@@ -95,7 +122,8 @@ export function solve(input: SolverInput): Grid {
       const factColOnlyThis = factDigitsAt[pos].size === 1 && factHasIt
       let state: CellState
       if (assumptions[pos] === digit) {
-        state = posDigitOK && !whatifEmpty ? 'assumed' : 'conflict'
+        // what-if 非空：假设成立→assumed；what-if 空：仅真正冲突的假设格标红，无辜假设格仍显示 assumed
+        state = !whatifEmpty && posDigitOK ? 'assumed' : conflictPositions.has(pos) ? 'conflict' : 'assumed'
       } else if (crossedOut.has(`${pos}-${digit}`)) {
         state = 'crossed'
       } else if (!factHasIt) {

@@ -97,4 +97,15 @@ describe('SetupView', () => {
     expect(w.findComponent(HandoffScreen).exists()).toBe(false)
     expect(w.emitted('setSecret')).toEqual([['p1', '1234']])
   })
+
+  it('p1Done=true：初始进入交接屏而非红方设置（防止看历史返回后软锁定）', () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate, p1Done: true } })
+    expect(w.findComponent(HandoffScreen).exists()).toBe(true)
+    expect(w.find('fieldset.setup-step').exists()).toBe(false)
+  })
+
+  it('p1Done=false（默认）：仍从红方设置开始', () => {
+    const w = mount(SetupView, { props: { digits: 4, validate: okValidate } })
+    expect(w.find('fieldset.setup-step legend').text()).toContain('红方')
+  })
 })

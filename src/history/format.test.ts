@@ -18,4 +18,9 @@ describe('formatPlayedAt', () => {
     const ms = new Date(past, 2, 5, 9, 7).getTime()
     expect(formatPlayedAt(ms)).toBe(`${past}-03-05 09:07`)
   })
+
+  it('非有限 ms（损坏数据）：返回占位符而非 NaN', () => {
+    expect(formatPlayedAt(NaN)).toBe('—')
+    expect(formatPlayedAt(Infinity)).toBe('—')
+  })
 })

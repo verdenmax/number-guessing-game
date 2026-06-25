@@ -7,6 +7,8 @@ import PlayView from './components/PlayView.vue'
 import ResultView from './components/ResultView.vue'
 import SolverPanel from './components/SolverPanel.vue'
 import HistoryView from './components/HistoryView.vue'
+import HandoffScreen from './components/HandoffScreen.vue'
+import SecretInput from './components/SecretInput.vue'
 
 describe('App 整合', () => {
   async function selectPvp(w: ReturnType<typeof mount>) {
@@ -135,6 +137,31 @@ describe('App 整合', () => {
     sv.vm.$emit('setSecret', 'p2', '5678')
     await w.vm.$nextTick()
     expect(w.findComponent(PlayView).props('names')).toEqual({ p1: '红哥', p2: '蓝妹' })
+  })
+
+  it('红方设秘密后开历史→返回，不退回红方设置且能继续（修复软锁定）', async () => {
+    const w = mount(App)
+    await selectPvp(w)
+    // 红方真实确认（走 SetupView 内部 confirmP1 → 进入交接屏）
+    w.findComponent(SetupView).findComponent(SecretInput).vm.$emit('confirm', '1234')
+    await w.vm.$nextTick()
+    expect(w.findComponent(HandoffScreen).exists()).toBe(true)
+    // 开历史再返回
+    await w.find('.nav-history').trigger('click')
+    await w.vm.$nextTick()
+    expect(w.findComponent(HistoryView).exists()).toBe(true)
+    w.findComponent(HistoryView).vm.$emit('back')
+    await w.vm.$nextTick()
+    // 不应退回红方设置；红方秘密已设 → 应回到交接屏
+    const sv = w.findComponent(SetupView)
+    expect(sv.exists()).toBe(true)
+    expect(sv.findComponent(HandoffScreen).exists()).toBe(true)
+    // 继续：交接 → 蓝方设置 → 进入对战，不抛错
+    sv.findComponent(HandoffScreen).vm.$emit('continue')
+    await w.vm.$nextTick()
+    sv.findComponent(SecretInput).vm.$emit('confirm', '5678')
+    await w.vm.$nextTick()
+    expect(w.findComponent(PlayView).exists()).toBe(true)
   })
 })
 

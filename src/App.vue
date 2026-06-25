@@ -150,6 +150,7 @@ const activeSide = computed(() => {
             :validate="checkSecret"
             :names="names"
             :vs-bot="gameMode === 'pve'"
+            :p1-done="state.secrets.p1 !== null"
             @set-secret="applySecret"
             @set-name="applyName"
           />

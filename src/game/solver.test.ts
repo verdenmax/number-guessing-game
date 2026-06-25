@@ -151,6 +151,14 @@ describe('solve', () => {
     expect(grid[1][1]).toBe('conflict')
   })
 
+  it('部分矛盾的假设：仅标真正参与冲突的假设格，无辜假设格不误红', () => {
+    // pos0=1 与 pos1=1 互斥（同数字两位违反互异）→ what-if 空；pos2=2 无辜
+    const grid = solve(baseInput({ assumptions: [1, 1, 2, null] }))
+    expect(grid[0][1]).toBe('conflict')
+    expect(grid[1][1]).toBe('conflict')
+    expect(grid[2][2]).toBe('assumed') // pos2=2 未参与冲突，不应被误标红
+  })
+
   it('假设与事实矛盾 → conflict', () => {
     // 事实：猜 1234 得 4 → 秘密就是 1234；假设 pos0=9 与之矛盾
     const grid = solve(
