@@ -20,7 +20,7 @@ botGuess(guesses: GuessRecord[], digits: number, difficulty: BotDifficulty, rnd?
 
 - **easy**：忽略候选，随机生成 digits 位（每位 `0-9`，**允许重复**），满足 `validateGuess`。
 - **normal**：候选 `C = filterByFacts(enumerateCandidates(digits), guesses)`，从 C 随机取一个；`C` 空（历史自相矛盾）时回退随机。
-- **hard**：`C` 空回退随机；`|C| > 150` 取 `C[0]`；否则一步 minimax 取「最坏剩余候选最小」者，平局取候选序最前者。详见 [L3 策略](../L3-details/bot-strategy.md)。
+- **hard**：`C` 空回退随机；`|C| > 150` 从 C 随机取一个（避免 O(n²) 卡顿，且消除「恒取 C[0]→开局总是 0123、偏向小数」的偏置）；否则一步 minimax 取「最坏剩余候选最小」者，**多个并列最优时经 `rnd` 随机取一个**（不再恒取字典序最前者，消除残局小数偏置）。详见 [L3 策略](../L3-details/bot-strategy.md)。
 
 `GuessRecord` 来自 `src/game/types.ts`：`{ guess: string; feedback: number }`（`feedback` 即「正确数目」Bulls）。
 

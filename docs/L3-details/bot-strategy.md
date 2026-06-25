@@ -2,7 +2,7 @@
 
 > 上层：[L1 概览](../L1-overview.md) · [L2 UI 层](../L2-components/ui.md) ｜ 下钻：[L4 bot API](../L4-api/bot.md) ｜ 源码：`src/game/bot.ts`
 >
-> 关联设计：[bot-opponent-design spec](../superpowers/specs/2026-06-23-bot-opponent-design.md)
+> 关联设计：[bot-opponent-design spec](../superpowers/specs/2026-06-23-bot-opponent-design.md)（历史快照；其中「取 C[0]／平局取候选序最前者」的选猜已于 2026-06-25 去偏置，**以本页为准**）
 
 ## 这是什么
 
@@ -38,31 +38,35 @@ flowchart TD
     S -->|easy| R["随机 digits 位（可重复）"]
     S -->|normal| N["C 中随机取一个"]
     S -->|hard| T{"|C| > 150 ?"}
-    T -->|是, 多为开局| F["取 C[0]（避免 O(n²) 卡顿）"]
+    T -->|是, 多为开局| F["C 中随机取一个（避免 O(n²) 卡顿）"]
     T -->|否| M["一步 minimax：最坏桶最小"]
 ```
 
 ## 困难档：一步 minimax
 
-对候选集 C 里每个候选 `g`，假设用它去猜，会按「正确数目」把 C 分成若干桶；最坏情况剩下的候选数 = 最大的那个桶。选「最坏桶最小」的 g —— 最坏情况下也能把候选砍得最狠。
+对候选集 C 里每个候选 `g`，假设用它去猜，会按「正确数目」把 C 分成若干桶；最坏情况剩下的候选数 = 最大的那个桶。选「最坏桶最小」的 g —— 最坏情况下也能把候选砍得最狠。**当多个 g 并列最优时，在它们之间随机取一个**（经 `rnd`），而非恒取字典序最前者——否则残局会持续偏向小数，使大数秘密更晚被命中。
 
 ```text
-minimax(C):
-  best, bestWorst = C[0], +∞
+minimax(C, rnd):
+  bestWorst, bestGuesses = +∞, []
   for g in C:                      # 每个候选都试着当「这一手」
     buckets = {}                   # feedback 值 → 命中该 feedback 的候选数
     for s in C:                    # 假设真值是 s
       f = feedback(s, g)
       buckets[f] += 1
     worst = max(buckets.values())  # 这一手最坏会剩多少候选
-    if worst < bestWorst:          # 严格小于 → 平局保留候选序最前者（确定性）
-      best, bestWorst = g, worst
-  return best
+    if worst < bestWorst:          # 更优 → 重置等优集
+      bestWorst, bestGuesses = worst, [g]
+    elif worst == bestWorst:       # 并列最优 → 收集进等优集
+      bestGuesses.append(g)
+  return bestGuesses[floor(rnd() * len(bestGuesses))]   # 在等优解间随机取，消除小数偏置
 ```
 
 ### 为什么有 150 阈值
 
-minimax 是 `O(|C|²)` 次 `feedback`。开局 `|C|=5040`，平方约 2540 万次会让 UI 卡顿；而拿到一两手反馈后 C 迅速跌破 150。故 `|C| > 150` 时先取 `C[0]`（任一候选都能继续收窄），`|C| ≤ 150` 起启用 minimax（≤150²=22500 次 feedback，亚毫秒）。
+minimax 是 `O(|C|²)` 次 `feedback`。开局 `|C|=5040`，平方约 2540 万次会让 UI 卡顿；而拿到一两手反馈后 C 迅速跌破 150。故 `|C| > 150` 时**从 C 中随机取一个**（任一候选都能继续收窄），`|C| ≤ 150` 起启用 minimax（≤150²=22500 次 feedback，亚毫秒）。
+
+> ⚠️ 这里**必须随机取**而非恒取 `C[0]`。`enumerateCandidates` 按字典序升序枚举，若总取 `C[0]`，开局必为 `0123`、且每轮都优先猜「当前最小的候选」——于是只有当秘密恰好是最小候选时才会被早早命中，导致**小数秘密很快被猜中、大数秘密很晚才命中**（不公平且可预测）。依 Bulls&Cows 的数字置换对称性，任一互异候选作为这一手信息量等价，故随机取既消除偏置又不损推理强度。
 
 ## 应用层如何驱动（engine 不改）
 
